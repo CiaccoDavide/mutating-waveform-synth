@@ -2,7 +2,7 @@
 
 Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, FX, and MIDI.
 
-**v1.1.1** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
+**v1.1.2** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
@@ -19,7 +19,7 @@ Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and
 - **Input** — Web MIDI and PC keyboard (Z–M, octave via `,` / `.`)
 - **Presets** — save / load / import / export JSON patches (schema v3); read-only **Inspired by** factory patches plus auto-seeded editable copies under **Yours** — approximations, not emulations of trademarked instruments
 - **Monitor strip** — scope, spectrum, spectrogram, LFO traces, voice activity, MIDI/KEY indicators
-- **Desktop app** — packaged with [Tauri](https://tauri.app/) for macOS, Windows, and Linux
+- **Desktop & Android** — packaged with [Tauri](https://tauri.app/) for macOS, Windows, Linux, and Android (APK)
 
 ### Signal path
 
@@ -42,7 +42,7 @@ Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and
 
 | | |
 | --- | --- |
-| **Desktop** | Download the latest build from [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) (macOS Apple Silicon + Intel, Linux, Windows) |
+| **Desktop / Android** | Download the latest build from [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) (macOS Apple Silicon + Intel, Linux, Windows, Android APK) |
 | **Web** | Build with `npm run build` and serve the `dist/` folder on your own host |
 
 Click **Start** (drone) or play a note (ADSR) once to unlock the audio context on the web build.
@@ -71,6 +71,12 @@ Desktop bundles:
 
 ```bash
 npm run tauri:build
+```
+
+Android APK (requires [Android SDK / NDK](https://v2.tauri.app/start/prerequisites/)):
+
+```bash
+npm run tauri:android:build
 ```
 
 ## Stack

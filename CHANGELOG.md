@@ -5,6 +5,13 @@ All notable changes to Mutating Waveform Synth are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-09-18
+
+### Added
+
+- Android APK packaging via Tauri (universal APK attached to GitHub Releases; sideload-signed for install)
+- Android launcher icon uses the same Tauri waveform mark as desktop
+
 ## [1.1.1] - 2026-09-18
 
 ### Changed

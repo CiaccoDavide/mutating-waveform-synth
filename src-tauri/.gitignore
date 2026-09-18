@@ -2,3 +2,19 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Android: keep project sources under gen/android; ignore local build caches
+# (also listed in gen/android/.gitignore — duplicated here as a safety net)
+/gen/android/.gradle/
+/gen/android/**/build/
+/gen/android/local.properties
+/gen/android/key.properties
+/gen/android/keystore.properties
+/gen/android/.tauri/
+/gen/android/tauri.settings.gradle
+/gen/android/app/tauri.properties
+/gen/android/app/tauri.build.gradle.kts
+/gen/android/app/proguard-tauri.pro
+/gen/android/app/src/main/jniLibs/**/*.so
+/gen/android/app/src/main/assets/tauri.conf.json
+/gen/android/app/src/main/**/generated/
