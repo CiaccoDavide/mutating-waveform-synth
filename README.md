@@ -2,7 +2,7 @@
 
 Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, FX, and MIDI.
 
-**v1.1.0** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
+**v1.1.1** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
