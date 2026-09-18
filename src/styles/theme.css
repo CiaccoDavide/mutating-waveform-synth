@@ -12,8 +12,8 @@
   --amber: #e8b86d;
   --amber-soft: rgba(232, 184, 109, 0.16);
   --danger: #f07178;
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Sono', sans-serif;
+  --font-mono: 'Sono', ui-monospace, monospace;
   --radius: 2px;
   --panel-blur: 16px;
 }
@@ -36,7 +36,8 @@ body {
   font-weight: 400;
   color: var(--text);
   background: var(--bg-deep);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   -webkit-font-smoothing: antialiased;
 }
 

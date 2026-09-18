@@ -14,6 +14,7 @@ import {
   type ParamLfo,
 } from '../audio/FilterModel';
 import type { LfoShape } from '../audio/LfoModel';
+import { CollapsibleSection } from './CollapsibleSection';
 import { RandomizeButton } from './RandomizeButton';
 import { SliderField } from './SliderField';
 import { randBool, randPick, randRange } from './random';
@@ -77,10 +78,14 @@ function ParamLfoControls({
   const inactive = disabled || !lfo.enabled;
 
   return (
-    <div className={`param-lfo ${lfo.enabled ? 'active' : ''}`}>
-      <div className="panel-subheader">
-        <span className="panel-title">{label} LFO</span>
-        <div className="panel-header-actions">
+    <CollapsibleSection
+      mode="always"
+      defaultOpen={lfo.enabled}
+      className={`param-lfo ${lfo.enabled ? 'active' : ''}`}
+      headerClassName="panel-subheader"
+      title={`${label} LFO`}
+      actions={
+        <>
           <button
             type="button"
             className={`btn btn-ghost ${lfo.enabled ? 'active' : ''}`}
@@ -95,9 +100,9 @@ function ParamLfoControls({
             title={`Randomize ${label} LFO`}
             onClick={() => onChange(randomParamLfo())}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="lfo-grid">
         <div className="field">
           <label className="label" htmlFor={`${idPrefix}-shape`}>
@@ -168,7 +173,7 @@ function ParamLfoControls({
         disabled={inactive}
         onChange={(depth) => onChange({ ...lfo, depth })}
       />
-    </div>
+    </CollapsibleSection>
   );
 }
 
@@ -208,10 +213,12 @@ export function FilterPanel({
   const cutoffSlider = cutoffToSlider(filter.cutoff);
 
   return (
-    <div className="panel filter-panel">
-      <div className="panel-header">
-        <span className="panel-title">Filters</span>
-        <div className="panel-header-actions">
+    <CollapsibleSection
+      mode="mobile"
+      className="panel filter-panel"
+      title="Filters"
+      actions={
+        <>
           <span className="panel-hint">
             {filters.filter((f) => f.enabled).length} active
           </span>
@@ -219,9 +226,9 @@ export function FilterPanel({
             title="Randomize all filters"
             onClick={() => onChange(randomFilterBank())}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="filter-tabs">
         {filters.map((f, i) => (
           <button
@@ -413,7 +420,7 @@ export function FilterPanel({
       >
         Reset Filters
       </button>
-    </div>
+    </CollapsibleSection>
   );
 }
 

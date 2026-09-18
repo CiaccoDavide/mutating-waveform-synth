@@ -1,4 +1,5 @@
 import type { VoiceState } from '../audio/HarmonyModel';
+import { CollapsibleSection } from './CollapsibleSection';
 import { RandomizeButton } from './RandomizeButton';
 import { SliderField } from './SliderField';
 import { randBool, randRange } from './random';
@@ -35,10 +36,12 @@ export function OscillatorPanel({
   if (!voice) return null;
 
   return (
-    <div className="panel osc-panel">
-      <div className="panel-header">
-        <span className="panel-title">Oscillators</span>
-        <div className="panel-header-actions">
+    <CollapsibleSection
+      mode="mobile"
+      className="panel osc-panel"
+      title="Oscillators"
+      actions={
+        <>
           <span className="panel-hint">
             {voices.filter((v) => v.enabled).length} active
           </span>
@@ -46,9 +49,9 @@ export function OscillatorPanel({
             title="Randomize all oscillators"
             onClick={onRandomizeAll}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="voice-tabs">
         {voices.map((v, i) => (
           <button
@@ -154,6 +157,6 @@ export function OscillatorPanel({
           onChange={(pan) => onVoiceChange(selectedVoice, { pan })}
         />
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

@@ -175,6 +175,30 @@ function evalLfoValue(
   return evalShape(lfo.shape, phase, customFn) * depth;
 }
 
+/** Current bipolar LFO outputs (−depth…depth) for metering. */
+export function sampleLfoLevels(mutators: MutatorState, t: number): number[] {
+  return createLfoSampler(mutators)(t);
+}
+
+/** Precompile shapes once; call the returned sampler each frame. */
+export function createLfoSampler(
+  mutators: MutatorState,
+): (t: number) => number[] {
+  const compiled = mutators.lfos.map((lfo) => ({
+    custom: compileShape(lfo.shape, lfo.formula),
+    sub: compileShape(lfo.sub.shape, lfo.sub.formula),
+  }));
+  const zeros = mutators.lfos.map(() => 0);
+
+  return (t: number) => {
+    if (!mutators.enabled) return zeros;
+    return mutators.lfos.map((lfo, i) => {
+      if (!lfo.enabled) return 0;
+      return evalLfoValue(lfo, t, compiled[i]!.custom, compiled[i]!.sub);
+    });
+  };
+}
+
 export function applyMutators(base: SampleFn, mutators: MutatorState): SampleFn {
   if (!mutators.enabled) return base;
 

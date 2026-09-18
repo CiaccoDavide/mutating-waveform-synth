@@ -9,6 +9,7 @@ import {
   type MutatorState,
   type SubLfoState,
 } from '../audio/LfoModel';
+import { CollapsibleSection } from './CollapsibleSection';
 import { RandomizeButton } from './RandomizeButton';
 import { SliderField } from './SliderField';
 import { randBool, randPick, randRange } from './random';
@@ -90,10 +91,15 @@ function LfoEditor({
   const inactive = disabled || !lfo.enabled;
 
   return (
-    <div className={`lfo-card ${lfo.enabled ? 'active' : ''}`}>
-      <div className="lfo-card-header">
-        <span className="lfo-card-title">LFO {index + 1}</span>
-        <div className="panel-header-actions">
+    <CollapsibleSection
+      mode="always"
+      defaultOpen={lfo.enabled}
+      className={`lfo-card ${lfo.enabled ? 'active' : ''}`}
+      headerClassName="lfo-card-header"
+      titleClassName="lfo-card-title"
+      title={`LFO ${index + 1}`}
+      actions={
+        <>
           <button
             type="button"
             className={`btn btn-ghost ${lfo.enabled ? 'active' : ''}`}
@@ -110,9 +116,9 @@ function LfoEditor({
               onChange(randomLfo());
             }}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="lfo-grid">
         <div className="field">
           <div className="field-row">
@@ -212,10 +218,14 @@ function LfoEditor({
         onChange={(depth) => onChange({ depth })}
       />
 
-      <div className="sub-lfo">
-        <div className="panel-subheader">
-          <span className="panel-title">Sub-LFO</span>
-          <div className="panel-header-actions">
+      <CollapsibleSection
+        mode="always"
+        defaultOpen={lfo.sub.enabled}
+        className="sub-lfo"
+        headerClassName="panel-subheader"
+        title="Sub-LFO"
+        actions={
+          <>
             <button
               type="button"
               className={`btn btn-ghost ${lfo.sub.enabled ? 'active' : ''}`}
@@ -230,9 +240,9 @@ function LfoEditor({
               title="Randomize sub-LFO"
               onClick={() => onChange({ sub: randomSub() })}
             />
-          </div>
-        </div>
-
+          </>
+        }
+      >
         <div className="lfo-grid">
           <div className="field">
             <label className="label" htmlFor={`sub-shape-${index}`}>
@@ -319,8 +329,8 @@ function LfoEditor({
           disabled={inactive || !lfo.sub.enabled}
           onChange={(depth) => onChange({ sub: { depth } })}
         />
-      </div>
-    </div>
+      </CollapsibleSection>
+    </CollapsibleSection>
   );
 }
 
@@ -341,18 +351,20 @@ export function FormulaPanel({
   };
 
   return (
-    <div className="panel formula-panel">
-      <div className="panel-header">
-        <span className="panel-title">Formula</span>
-        <div className="panel-header-actions">
+    <CollapsibleSection
+      mode="mobile"
+      className="panel formula-panel"
+      title="Formula"
+      actions={
+        <>
           <span className="panel-hint">x = phase · t = time</span>
           <RandomizeButton
             title="Randomize formula section"
             onClick={randomizeSection}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="field">
         <label className="label" htmlFor="preset">
           Preset
@@ -438,6 +450,6 @@ export function FormulaPanel({
       >
         Reset LFOs
       </button>
-    </div>
+    </CollapsibleSection>
   );
 }

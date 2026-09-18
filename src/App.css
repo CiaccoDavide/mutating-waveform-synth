@@ -2,6 +2,7 @@
   position: relative;
   height: 100%;
   width: 100%;
+  min-width: 1280px;
   overflow: hidden;
 }
 
@@ -28,13 +29,22 @@
   pointer-events: auto;
 }
 
-.app-brand {
+.app-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.app-brand {
+  flex: 1;
+  min-width: 0;
 }
 
 .app-brand h1 {
   margin: 0;
-  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  font-size: clamp(1.4rem, 2.6vw, 2.2rem);
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--text);
@@ -45,6 +55,121 @@
   font-size: 0.85rem;
   color: var(--text-dim);
   letter-spacing: 0.04em;
+}
+
+.monitor-strip {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.5rem;
+  padding: 0.32rem 0.5rem 0.36rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(var(--panel-blur));
+  -webkit-backdrop-filter: blur(var(--panel-blur));
+}
+
+.monitor-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.monitor-cell + .monitor-cell {
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--border);
+}
+
+.monitor-status-cell {
+  justify-content: space-between;
+  min-width: 80px;
+}
+
+.monitor-cell-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.monitor-label {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
+.monitor-readout {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+  opacity: 0.85;
+  line-height: 1;
+}
+
+.monitor-canvas {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #0a1016;
+}
+
+.monitor-dots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 0.05rem 0;
+}
+
+.monitor-dot {
+  width: 6px;
+  height: 6px;
+  justify-self: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  transition: background 60ms linear, border-color 60ms linear, box-shadow 60ms linear;
+}
+
+.monitor-dot.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 5px rgba(94, 234, 212, 0.45);
+}
+
+.monitor-flags {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.monitor-flag {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  padding: 0.14rem 0.12rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-faint);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.monitor-flag.is-ready {
+  color: var(--text-dim);
+  border-color: var(--border-strong);
+}
+
+.monitor-flag.is-lit {
+  color: var(--bg-deep);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .app-stage {
@@ -120,6 +245,54 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text);
+}
+
+.collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.collapse-toggle:hover .panel-title,
+.collapse-toggle:hover .lfo-card-title {
+  color: var(--accent);
+}
+
+.collapse-chevron {
+  display: inline-block;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--text-faint);
+  transform: rotate(0deg);
+  transition: transform 120ms ease;
+}
+
+.collapse-chevron.is-open {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+
+.collapsible-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.lfo-card > .collapsible-body,
+.param-lfo > .collapsible-body {
+  gap: 0.65rem;
+}
+
+.collapsible.is-closed.panel {
+  gap: 0;
 }
 
 .panel-hint {
@@ -257,8 +430,9 @@
   margin-top: 0.15rem;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
+}
+
+.sub-lfo > .collapsible-body {
   gap: 0.5rem;
 }
 
@@ -324,6 +498,16 @@
 
 .midi-row {
   margin-top: -0.25rem;
+}
+
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+}
+
+.mode-toggle .btn {
+  width: 100%;
 }
 
 .voice-tabs {
@@ -398,39 +582,134 @@
   color: var(--accent);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 720px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    min-height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
   body {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .app {
     height: auto;
     min-height: 100%;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
   }
 
   .viz-canvas {
     position: fixed;
+    pointer-events: none;
   }
 
   .app-overlay {
+    height: auto;
+    min-height: 100%;
     padding: 1rem;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .app-top {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .monitor-strip {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+
+  .monitor-cell {
+    flex: 1 1 auto;
+    max-width: 100%;
+  }
+
+  .monitor-cell + .monitor-cell {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .monitor-canvas {
+    max-width: 100%;
+    height: auto;
   }
 
   .app-stage {
+    flex: none;
+    min-height: 0;
+    height: auto;
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  .app-stage > * {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .stage-left,
+  .stage-right,
+  .stage-center {
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   .stage-center {
     order: -1;
   }
 
-  .plot-frame {
-    max-width: 100%;
+  .stage-left > .formula-panel,
+  .stage-right > .osc-panel {
+    flex: none;
+    max-height: none;
+    height: auto;
+  }
+
+  .formula-panel,
+  .harmony-panel,
+  .filter-panel,
+  .osc-panel,
+  .preset-panel {
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   .center-controls {
+    flex: none;
+    min-height: 0;
+    height: auto;
     grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .harmony-panel,
+  .filter-panel {
+    height: auto;
+  }
+
+  .plot-frame {
     max-width: 100%;
   }
 }

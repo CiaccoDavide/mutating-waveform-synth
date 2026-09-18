@@ -1,9 +1,13 @@
 import type { ArpState } from '../audio/Arpeggiator';
+import type { AdsrParams } from '../audio/Envelope';
 import type { FilterState } from '../audio/FilterModel';
 import type { HarmonyPresetId, VoiceState } from '../audio/HarmonyModel';
 import type { MutatorState } from '../audio/LfoModel';
+import type { PlayMode } from '../input/RootInput';
+import { DEFAULT_ADSR } from '../audio/Envelope';
+import { DEFAULT_ARP } from '../audio/Arpeggiator';
 
-export const PRESET_SCHEMA_VERSION = 1;
+export const PRESET_SCHEMA_VERSION = 2;
 export const PRESET_STORAGE_KEY = 'mwd-global-presets-v1';
 
 export interface InstrumentSnapshot {
@@ -16,10 +20,21 @@ export interface InstrumentSnapshot {
   harmonyId: HarmonyPresetId;
   masterVolume: number;
   arp: ArpState;
+  playMode?: PlayMode;
+  adsr?: AdsrParams;
   filters: FilterState[];
   voices: VoiceState[];
   selectedVoice: number;
   selectedFilter: number;
+}
+
+export function normalizeSnapshot(snap: InstrumentSnapshot): InstrumentSnapshot {
+  return {
+    ...snap,
+    playMode: snap.playMode === 'adsr' ? 'adsr' : 'drone',
+    adsr: snap.adsr ? { ...DEFAULT_ADSR, ...snap.adsr } : { ...DEFAULT_ADSR },
+    arp: snap.arp ? { ...DEFAULT_ARP, ...snap.arp } : { ...DEFAULT_ARP },
+  };
 }
 
 export interface SavedPreset {

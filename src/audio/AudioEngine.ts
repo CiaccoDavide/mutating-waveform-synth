@@ -1,4 +1,4 @@
-import { VOICE_COUNT, type VoiceState } from './HarmonyModel';
+import { midiToFreq, VOICE_COUNT, type VoiceState } from './HarmonyModel';
 import { TABLE_SIZE } from './FormulaCompiler';
 import {
   createDefaultFilterBank,
@@ -6,6 +6,15 @@ import {
   resolveFilterParams,
   type FilterState,
 } from './FilterModel';
+import {
+  DEFAULT_ADSR,
+  silenceParam,
+  triggerAttack,
+  triggerRelease,
+  type AdsrParams,
+} from './Envelope';
+
+export type PlayMode = 'drone' | 'adsr';
 
 export interface EngineSnapshot {
   timeDomain: Uint8Array;
@@ -13,6 +22,14 @@ export interface EngineSnapshot {
   bass: number;
   mid: number;
   high: number;
+  rms: number;
+  peak: number;
+}
+
+interface HeldNote {
+  midi: number;
+  voiceIndices: number[];
+  order: number;
 }
 
 export class AudioEngine {
@@ -31,6 +48,15 @@ export class AudioEngine {
   private filterStates: FilterState[] = createDefaultFilterBank();
   private timeDomain = new Uint8Array(0);
   private frequencyData = new Uint8Array(0);
+  private voiceActive = new Array<boolean>(VOICE_COUNT).fill(false);
+  private peakHold = 0;
+
+  private playMode: PlayMode = 'drone';
+  private adsr: AdsrParams = { ...DEFAULT_ADSR };
+  private heldNotes = new Map<number, HeldNote>();
+  private voiceMidi = new Array<number>(VOICE_COUNT).fill(-1);
+  private noteOrder = 0;
+  private freeTimers = new Map<number, number>();
 
   get isStarted() {
     return this.started;
@@ -40,8 +66,16 @@ export class AudioEngine {
     return this.ctx;
   }
 
+  getPlayMode() {
+    return this.playMode;
+  }
+
   getAnalyser(): AnalyserNode | null {
     return this.analyser;
+  }
+
+  getVoiceActivity(): boolean[] {
+    return this.voiceActive.slice();
   }
 
   async start(): Promise<void> {
@@ -53,10 +87,11 @@ export class AudioEngine {
     const ctx = new AudioContext();
     this.ctx = ctx;
 
-    await ctx.audioWorklet.addModule('/worklets/wavetable-processor.js');
+    await ctx.audioWorklet.addModule(
+      `${import.meta.env.BASE_URL}worklets/wavetable-processor.js`,
+    );
     this.workletReady = true;
 
-    // Series filter chain: voices → F0 → F1 → F2 → master → analyser
     this.filterNodes = [];
     for (let i = 0; i < FILTER_COUNT; i += 1) {
       this.filterNodes.push(ctx.createBiquadFilter());
@@ -92,7 +127,7 @@ export class AudioEngine {
         parameterData: { frequency: 110, gain: 0 },
       });
       const gain = ctx.createGain();
-      gain.gain.value = 1;
+      gain.gain.value = this.playMode === 'adsr' ? 0 : 1;
       const panner = ctx.createStereoPanner();
       panner.pan.value = 0;
       node.connect(gain);
@@ -107,12 +142,15 @@ export class AudioEngine {
 
   async stop(): Promise<void> {
     if (!this.ctx) return;
+    this.clearAdsrState();
     await this.ctx.close();
     this.ctx = null;
     this.masterGain = null;
     this.filterNodes = [];
     this.analyser = null;
     this.voices = [];
+    this.voiceActive.fill(false);
+    this.peakHold = 0;
     this.started = false;
     this.workletReady = false;
   }
@@ -128,6 +166,33 @@ export class AudioEngine {
     }
   }
 
+  setAdsr(adsr: AdsrParams) {
+    this.adsr = { ...adsr };
+  }
+
+  setPlayMode(mode: PlayMode) {
+    if (this.playMode === mode) return;
+    this.playMode = mode;
+    if (!this.ctx || !this.workletReady) return;
+
+    if (mode === 'adsr') {
+      this.clearAdsrState();
+      for (const voice of this.voices) {
+        silenceParam(voice.gain.gain, this.ctx);
+        const gainParam = voice.node.parameters.get('gain');
+        gainParam?.setValueAtTime(0, this.ctx.currentTime);
+        voice.node.port.postMessage({ type: 'params', active: false, gain: 0 });
+      }
+      this.voiceActive.fill(false);
+    } else {
+      this.releaseAllAdsr(true);
+      for (const voice of this.voices) {
+        silenceParam(voice.gain.gain, this.ctx);
+        voice.gain.gain.setValueAtTime(1, this.ctx.currentTime);
+      }
+    }
+  }
+
   setFilters(states: FilterState[], timeSec = 0) {
     this.filterStates = states.map((s) => ({
       ...s,
@@ -138,7 +203,6 @@ export class AudioEngine {
     this.applyFiltersAtTime(timeSec);
   }
 
-  /** Push modulated filter params for the current time (seconds). */
   tickFilters(timeSec: number) {
     this.applyFiltersAtTime(timeSec);
   }
@@ -194,7 +258,7 @@ export class AudioEngine {
     frequencies: number[],
     gainMultipliers?: number[],
   ) {
-    if (!this.workletReady) return;
+    if (!this.workletReady || this.playMode === 'adsr') return;
     for (let i = 0; i < this.voices.length; i += 1) {
       const state = voices[i];
       const voice = this.voices[i];
@@ -204,6 +268,8 @@ export class AudioEngine {
       const active = state.enabled;
       const mult = gainMultipliers?.[i] ?? 1;
       const gain = active ? state.gain * mult : 0;
+      const sounding = active && gain > 0.0001;
+      this.voiceActive[i] = sounding;
 
       const freqParam = voice.node.parameters.get('frequency');
       const gainParam = voice.node.parameters.get('gain');
@@ -213,9 +279,10 @@ export class AudioEngine {
       if (gainParam && this.ctx) {
         gainParam.setTargetAtTime(gain, this.ctx.currentTime, 0.04);
       }
+      voice.gain.gain.setTargetAtTime(1, this.ctx!.currentTime, 0.02);
       voice.node.port.postMessage({
         type: 'params',
-        active: active && gain > 0.0001,
+        active: sounding,
         frequency: freq,
         gain,
       });
@@ -225,6 +292,185 @@ export class AudioEngine {
         0.04,
       );
     }
+  }
+
+  /**
+   * Polyphonic note-on: allocate one voice per interval (relative to midi root).
+   */
+  adsrNoteOn(
+    midi: number,
+    velocity: number,
+    intervals: number[],
+    voiceTemplate: Pick<VoiceState, 'gain' | 'pan'>[],
+  ) {
+    if (!this.workletReady || !this.ctx || this.playMode !== 'adsr') return;
+    if (intervals.length === 0) return;
+
+    // Retrigger same MIDI note
+    if (this.heldNotes.has(midi)) {
+      this.adsrNoteOff(midi, true);
+    }
+
+    const needed = intervals.length;
+    this.ensureFreeVoices(needed);
+
+    const free = this.listFreeVoices();
+    if (free.length < needed) return;
+
+    const voiceIndices = free.slice(0, needed);
+    const vel = Math.min(1, Math.max(0, velocity));
+    const peakScale = 0.35 + 0.65 * vel;
+
+    for (let i = 0; i < needed; i += 1) {
+      const vi = voiceIndices[i]!;
+      const voice = this.voices[vi]!;
+      const interval = intervals[i]!;
+      const tmpl = voiceTemplate[i] ?? { gain: 0.3, pan: 0 };
+      const freq = midiToFreq(midi + interval);
+      const oscGain = tmpl.gain * peakScale;
+
+      this.clearFreeTimer(vi);
+      this.voiceMidi[vi] = midi;
+      this.voiceActive[vi] = true;
+
+      const freqParam = voice.node.parameters.get('frequency');
+      const gainParam = voice.node.parameters.get('gain');
+      const now = this.ctx.currentTime;
+      freqParam?.setValueAtTime(freq, now);
+      gainParam?.setValueAtTime(oscGain, now);
+      voice.panner.pan.setValueAtTime(
+        Math.max(-1, Math.min(1, tmpl.pan)),
+        now,
+      );
+      voice.node.port.postMessage({
+        type: 'params',
+        active: true,
+        frequency: freq,
+        gain: oscGain,
+      });
+      triggerAttack(voice.gain.gain, this.ctx, this.adsr, 1);
+    }
+
+    this.heldNotes.set(midi, {
+      midi,
+      voiceIndices,
+      order: this.noteOrder++,
+    });
+  }
+
+  adsrNoteOff(midi: number, immediate = false) {
+    if (!this.ctx || this.playMode !== 'adsr') return;
+    const held = this.heldNotes.get(midi);
+    if (!held) return;
+    this.heldNotes.delete(midi);
+
+    for (const vi of held.voiceIndices) {
+      const voice = this.voices[vi];
+      if (!voice) continue;
+      if (immediate) {
+        silenceParam(voice.gain.gain, this.ctx);
+        this.freeVoice(vi);
+      } else {
+        const end = triggerRelease(voice.gain.gain, this.ctx, this.adsr.release);
+        this.scheduleFree(vi, end);
+      }
+    }
+  }
+
+  releaseAllAdsr(immediate = false) {
+    const notes = [...this.heldNotes.keys()];
+    for (const midi of notes) {
+      this.adsrNoteOff(midi, immediate);
+    }
+    if (immediate) {
+      this.clearAdsrState();
+      if (this.ctx) {
+        for (const voice of this.voices) {
+          silenceParam(voice.gain.gain, this.ctx);
+        }
+      }
+    }
+  }
+
+  private ensureFreeVoices(needed: number) {
+    let free = this.listFreeVoices().length;
+    while (free < needed) {
+      if (this.heldNotes.size > 0) {
+        let oldest: HeldNote | null = null;
+        for (const held of this.heldNotes.values()) {
+          if (!oldest || held.order < oldest.order) oldest = held;
+        }
+        if (!oldest) break;
+        this.adsrNoteOff(oldest.midi, true);
+      } else {
+        const busy = this.voiceMidi.findIndex((m) => m !== -1);
+        if (busy < 0) break;
+        this.freeVoice(busy);
+      }
+      free = this.listFreeVoices().length;
+    }
+  }
+
+  private listFreeVoices(): number[] {
+    const free: number[] = [];
+    for (let i = 0; i < VOICE_COUNT; i += 1) {
+      if (this.voiceMidi[i] === -1) free.push(i);
+    }
+    return free;
+  }
+
+  private freeVoice(index: number) {
+    this.voiceMidi[index] = -1;
+    this.voiceActive[index] = false;
+    this.clearFreeTimer(index);
+    const voice = this.voices[index];
+    if (voice && this.ctx) {
+      voice.node.port.postMessage({
+        type: 'params',
+        active: false,
+        gain: 0,
+      });
+      const gainParam = voice.node.parameters.get('gain');
+      gainParam?.setValueAtTime(0, this.ctx.currentTime);
+    }
+  }
+
+  private scheduleFree(index: number, endTime: number) {
+    this.clearFreeTimer(index);
+    const delayMs = Math.max(0, (endTime - (this.ctx?.currentTime ?? 0)) * 1000 + 20);
+    const timer = window.setTimeout(() => {
+      this.freeTimers.delete(index);
+      // Only free if not reassigned
+      if (this.voiceMidi[index] !== -1) {
+        // still marked — check if still in a held note
+        let stillHeld = false;
+        for (const held of this.heldNotes.values()) {
+          if (held.voiceIndices.includes(index)) {
+            stillHeld = true;
+            break;
+          }
+        }
+        if (!stillHeld) this.freeVoice(index);
+      }
+    }, delayMs);
+    this.freeTimers.set(index, timer);
+  }
+
+  private clearFreeTimer(index: number) {
+    const t = this.freeTimers.get(index);
+    if (t !== undefined) {
+      clearTimeout(t);
+      this.freeTimers.delete(index);
+    }
+  }
+
+  private clearAdsrState() {
+    for (const t of this.freeTimers.values()) clearTimeout(t);
+    this.freeTimers.clear();
+    this.heldNotes.clear();
+    this.voiceMidi.fill(-1);
+    this.voiceActive.fill(false);
+    this.noteOrder = 0;
   }
 
   getSnapshot(): EngineSnapshot | null {
@@ -245,12 +491,25 @@ export class AudioEngine {
     mid /= third * 255;
     high /= (n - third * 2) * 255;
 
+    let sumSq = 0;
+    let peak = 0;
+    for (let i = 0; i < this.timeDomain.length; i += 1) {
+      const sample = (this.timeDomain[i]! - 128) / 128;
+      sumSq += sample * sample;
+      const abs = Math.abs(sample);
+      if (abs > peak) peak = abs;
+    }
+    const rms = Math.sqrt(sumSq / Math.max(1, this.timeDomain.length));
+    this.peakHold = Math.max(peak, this.peakHold * 0.985);
+
     return {
       timeDomain: this.timeDomain,
       frequencyData: this.frequencyData,
       bass,
       mid,
       high,
+      rms,
+      peak: this.peakHold,
     };
   }
 }

@@ -21,6 +21,8 @@ import {
   DEFAULT_ARP,
   type ArpState,
 } from './audio/Arpeggiator';
+import { DEFAULT_ADSR, type AdsrParams } from './audio/Envelope';
+import type { PlayMode } from './input/RootInput';
 import { FormulaPlot } from './ui/FormulaPlot';
 import { FormulaPanel } from './ui/FormulaPanel';
 import { OscillatorPanel } from './ui/OscillatorPanel';
@@ -44,12 +46,14 @@ import {
 } from './audio/LfoModel';
 import { useRootInput } from './input/useRootInput';
 import { PresetPanel } from './ui/PresetPanel';
+import { MonitorStrip } from './ui/MonitorStrip';
 import {
   createPresetId,
   deletePreset,
   exportLibraryToFile,
   exportPresetToFile,
   loadPresetLibrary,
+  normalizeSnapshot,
   parseImportedJson,
   PRESET_SCHEMA_VERSION,
   readFileAsText,
@@ -84,6 +88,8 @@ export default function App() {
   const [harmonyId, setHarmonyId] = useState<HarmonyPresetId>('minor');
   const [masterVolume, setMasterVolume] = useState(0.55);
   const [arp, setArp] = useState<ArpState>(DEFAULT_ARP);
+  const [playMode, setPlayMode] = useState<PlayMode>('drone');
+  const [adsr, setAdsr] = useState<AdsrParams>(DEFAULT_ADSR);
   const [filters, setFilters] = useState<FilterState[]>(() =>
     createDefaultFilterBank(),
   );
@@ -92,9 +98,12 @@ export default function App() {
   filtersRef.current = filters;
   const voicesRef = useRef<VoiceState[]>([]);
   const frequenciesRef = useRef<number[]>([]);
+  const intervalsRef = useRef<number[]>([]);
   const arpRef = useRef(arp);
   arpRef.current = arp;
-  const [droneOn, setDroneOn] = useState(false);
+  const playModeRef = useRef(playMode);
+  playModeRef.current = playMode;
+  const [audioOn, setAudioOn] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState(0);
   const [busy, setBusy] = useState(false);
 
@@ -115,11 +124,40 @@ export default function App() {
     [],
   );
 
-  const { midiStatus, enableMidi } = useRootInput({
+  const handleNoteOn = useCallback((midi: number, velocity: number) => {
+    const vs = voicesRef.current;
+    const ints = intervalsRef.current;
+    const chordIntervals: number[] = [];
+    const templates: { gain: number; pan: number }[] = [];
+    for (let i = 0; i < vs.length; i += 1) {
+      const v = vs[i];
+      if (!v?.enabled) continue;
+      const interval =
+        ints[i] ??
+        ints[i % Math.max(1, ints.length)]! +
+          12 * Math.floor(i / Math.max(1, ints.length));
+      chordIntervals.push(interval);
+      templates.push({ gain: v.gain, pan: v.pan });
+    }
+    if (chordIntervals.length === 0) {
+      chordIntervals.push(0);
+      templates.push({ gain: 0.35, pan: 0 });
+    }
+    audioEngine.adsrNoteOn(midi, velocity, chordIntervals, templates);
+  }, []);
+
+  const handleNoteOff = useCallback((midi: number) => {
+    audioEngine.adsrNoteOff(midi);
+  }, []);
+
+  const { midiStatus, enableMidi, midiActive, keyboardActive } = useRootInput({
     enabled: true,
+    playMode,
     playOctave,
     onRootChange: handleRootChange,
     onPlayOctaveChange: setPlayOctave,
+    onNoteOn: handleNoteOn,
+    onNoteOff: handleNoteOff,
   });
 
   const rootHz = useMemo(
@@ -131,6 +169,7 @@ export default function App() {
     () => intervalsForPreset(harmonyId, CUSTOM_INTERVALS),
     [harmonyId],
   );
+  intervalsRef.current = intervals;
 
   const [voices, setVoices] = useState<VoiceState[]>(() =>
     createDefaultVoices(
@@ -176,6 +215,8 @@ export default function App() {
       harmonyId,
       masterVolume,
       arp,
+      playMode,
+      adsr,
       filters,
       voices,
       selectedVoice,
@@ -191,6 +232,8 @@ export default function App() {
     harmonyId,
     masterVolume,
     arp,
+    playMode,
+    adsr,
     filters,
     voices,
     selectedVoice,
@@ -198,28 +241,33 @@ export default function App() {
   ]);
 
   const applySnapshot = useCallback((snap: InstrumentSnapshot) => {
-    setExpression(snap.expression);
-    setPresetId(snap.formulaPresetId || 'custom');
-    setMutators(snap.mutators);
-    setRootNote(snap.rootNote);
-    setRootOctave(snap.rootOctave);
-    setPlayOctave(snap.playOctave ?? snap.rootOctave);
-    setHarmonyId(snap.harmonyId);
-    setMasterVolume(snap.masterVolume);
-    setArp(snap.arp);
-    setFilters(snap.filters);
-    setVoices(snap.voices);
-    setSelectedVoice(snap.selectedVoice ?? 0);
-    setSelectedFilter(snap.selectedFilter ?? 0);
+    const s = normalizeSnapshot(snap);
+    setExpression(s.expression);
+    setPresetId(s.formulaPresetId || 'custom');
+    setMutators(s.mutators);
+    setRootNote(s.rootNote);
+    setRootOctave(s.rootOctave);
+    setPlayOctave(s.playOctave ?? s.rootOctave);
+    setHarmonyId(s.harmonyId);
+    setMasterVolume(s.masterVolume);
+    setArp(s.arp);
+    setPlayMode(s.playMode ?? 'drone');
+    setAdsr(s.adsr ?? DEFAULT_ADSR);
+    setFilters(s.filters);
+    setVoices(s.voices);
+    setSelectedVoice(s.selectedVoice ?? 0);
+    setSelectedFilter(s.selectedFilter ?? 0);
     sampleFnRef.current = null;
-    const compiled = compileFormula(snap.expression);
+    const compiled = compileFormula(s.expression);
     if (compiled.ok) {
       sampleFnRef.current = compiled.fn;
       setCompileError(null);
-      setSamples(bakeWavetable(applyMutators(compiled.fn, snap.mutators), 0));
+      setSamples(bakeWavetable(applyMutators(compiled.fn, s.mutators), 0));
     } else {
       setCompileError(compiled.error);
     }
+    audioEngine.setPlayMode(s.playMode ?? 'drone');
+    audioEngine.setAdsr(s.adsr ?? DEFAULT_ADSR);
   }, []);
 
   const persistLibrary = useCallback((next: PresetLibrary) => {
@@ -345,23 +393,27 @@ export default function App() {
     sampleFnRef.current = result.fn;
     const table = bakeWavetable(applyMutators(result.fn, mutators), 0);
     setSamples(table);
-    if (droneOn) audioEngine.pushWavetable(table);
+    if (audioOn) audioEngine.pushWavetable(table);
   }, [expression]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Push voice params when they change (arp handled in RAF when enabled)
+  // Push voice params when they change (drone mode only; arp in RAF)
   useEffect(() => {
-    if (!droneOn) return;
+    if (!audioOn || playMode !== 'drone') return;
     const mults = computeArpGainMultipliers(
       voices,
       arp,
       performance.now() * 0.001,
     );
     audioEngine.updateVoices(voices, frequencies, mults);
-  }, [voices, frequencies, droneOn, arp]);
+  }, [voices, frequencies, audioOn, arp, playMode]);
 
   useEffect(() => {
     audioEngine.setMasterVolume(masterVolume);
   }, [masterVolume]);
+
+  useEffect(() => {
+    audioEngine.setAdsr(adsr);
+  }, [adsr]);
 
   useEffect(() => {
     audioEngine.setFilters(filters, performance.now() * 0.001);
@@ -384,12 +436,12 @@ export default function App() {
           lastBake = now;
           const table = bakeWavetable(applyMutators(fn, mutators), t);
           setSamples(table);
-          if (droneOn) audioEngine.pushWavetable(table);
+          if (audioOn) audioEngine.pushWavetable(table);
         }
       }
 
       if (
-        droneOn &&
+        audioOn &&
         filterBankNeedsTick(filtersRef.current) &&
         now - lastFilter > 1000 / 30
       ) {
@@ -397,7 +449,12 @@ export default function App() {
         audioEngine.tickFilters(t);
       }
 
-      if (droneOn && arpRef.current.enabled && now - lastArp > 1000 / 60) {
+      if (
+        audioOn &&
+        playModeRef.current === 'drone' &&
+        arpRef.current.enabled &&
+        now - lastArp > 1000 / 60
+      ) {
         lastArp = now;
         const mults = computeArpGainMultipliers(
           voicesRef.current,
@@ -415,7 +472,7 @@ export default function App() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [mutators, expression, droneOn]);
+  }, [mutators, expression, audioOn]);
 
   const handlePresetChange = useCallback((id: string) => {
     setPresetId(id);
@@ -448,7 +505,31 @@ export default function App() {
     setHarmonyId(next.harmonyId);
     setMasterVolume(next.masterVolume);
     setArp(next.arp);
+    setPlayMode(next.playMode);
+    setAdsr(next.adsr);
+    audioEngine.setPlayMode(next.playMode);
+    audioEngine.setAdsr(next.adsr);
   }, []);
+
+  const handlePlayModeChange = useCallback(
+    (mode: PlayMode) => {
+      setPlayMode(mode);
+      audioEngine.setPlayMode(mode);
+      if (mode === 'drone' && audioOn) {
+        const mults = computeArpGainMultipliers(
+          voicesRef.current,
+          arpRef.current,
+          performance.now() * 0.001,
+        );
+        audioEngine.updateVoices(
+          voicesRef.current,
+          frequenciesRef.current,
+          mults,
+        );
+      }
+    },
+    [audioOn],
+  );
 
   const handleRandomizeOscillators = useCallback(() => {
     setVoices((prev) =>
@@ -464,15 +545,18 @@ export default function App() {
     );
   }, []);
 
-  const handleToggleDrone = async () => {
+  const handleToggleAudio = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      if (droneOn) {
+      if (audioOn) {
+        audioEngine.releaseAllAdsr(true);
         await audioEngine.stop();
-        setDroneOn(false);
+        setAudioOn(false);
       } else {
         await audioEngine.start();
+        audioEngine.setPlayMode(playMode);
+        audioEngine.setAdsr(adsr);
         const fn = sampleFnRef.current;
         if (fn) {
           const table = bakeWavetable(applyMutators(fn, mutators), 0);
@@ -480,9 +564,11 @@ export default function App() {
         }
         audioEngine.setMasterVolume(masterVolume);
         audioEngine.setFilters(filters, 0);
-        const mults = computeArpGainMultipliers(voices, arp, 0);
-        audioEngine.updateVoices(voices, frequencies, mults);
-        setDroneOn(true);
+        if (playMode === 'drone') {
+          const mults = computeArpGainMultipliers(voices, arp, 0);
+          audioEngine.updateVoices(voices, frequencies, mults);
+        }
+        setAudioOn(true);
       }
     } catch (err) {
       console.error(err);
@@ -513,12 +599,22 @@ export default function App() {
 
   return (
     <div className="app">
-      <Visualizer engine={audioEngine} active={droneOn} />
+      <Visualizer engine={audioEngine} active={audioOn} />
 
       <div className="app-overlay">
-        <header className="app-brand">
-          <h1>Mutating Waveform Drones</h1>
-          <p>Formula-shaped oscillators · harmonized · time-warped</p>
+        <header className="app-top">
+          <div className="app-brand">
+            <h1>Mutating Waveform Synth</h1>
+            <p>Formula-shaped oscillators · harmonized · time-warped</p>
+          </div>
+          <MonitorStrip
+            engine={audioEngine}
+            active={audioOn}
+            mutators={mutators}
+            midiStatus={midiStatus}
+            midiActive={midiActive}
+            keyboardActive={keyboardActive}
+          />
         </header>
 
         <main className="app-stage">
@@ -546,7 +642,9 @@ export default function App() {
                 rootHz={rootHz}
                 harmonyId={harmonyId}
                 masterVolume={masterVolume}
-                droneOn={droneOn}
+                audioOn={audioOn}
+                playMode={playMode}
+                adsr={adsr}
                 arp={arp}
                 midiStatus={midiStatus}
                 playOctave={playOctave}
@@ -557,8 +655,10 @@ export default function App() {
                 }}
                 onHarmonyChange={setHarmonyId}
                 onMasterVolumeChange={setMasterVolume}
-                onToggleDrone={handleToggleDrone}
+                onToggleAudio={handleToggleAudio}
                 onRandomizeSection={handleRandomizeHarmony}
+                onPlayModeChange={handlePlayModeChange}
+                onAdsrChange={setAdsr}
                 onArpChange={setArp}
                 onEnableMidi={enableMidi}
               />

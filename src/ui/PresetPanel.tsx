@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { SavedPreset } from '../state/InstrumentPreset';
+import { CollapsibleSection } from './CollapsibleSection';
 
 interface PresetPanelProps {
   presets: SavedPreset[];
@@ -34,12 +35,12 @@ export function PresetPanel({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="panel preset-panel">
-      <div className="panel-header">
-        <span className="panel-title">Presets</span>
-        <span className="panel-hint">{presets.length} saved</span>
-      </div>
-
+    <CollapsibleSection
+      mode="mobile"
+      className="panel preset-panel"
+      title="Presets"
+      actions={<span className="panel-hint">{presets.length} saved</span>}
+    >
       <div className="field">
         <label className="label" htmlFor="preset-name">
           Name
@@ -141,6 +142,6 @@ export function PresetPanel({
       </div>
 
       {status && <p className="preset-status">{status}</p>}
-    </div>
+    </CollapsibleSection>
   );
 }
