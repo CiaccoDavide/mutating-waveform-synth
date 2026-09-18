@@ -244,10 +244,11 @@ export function mutatorsNeedBake(mutators: MutatorState): boolean {
 
 /** Load LFO bank matching a preset's pedagogical tier */
 export function mutatorsForTier(
-  tier: 'static' | 'simple-lfo' | 'multi-lfo' | 'sub-lfo' | 'complex',
+  tier: 'static' | 'simple-lfo' | 'multi-lfo' | 'sub-lfo' | 'complex' | 'character',
 ): MutatorState {
   switch (tier) {
     case 'static':
+    case 'character':
       return createDefaultMutators({
         enabled: true,
         morphRate: 1,

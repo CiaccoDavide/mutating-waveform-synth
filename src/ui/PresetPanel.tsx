@@ -3,10 +3,12 @@ import type { SavedPreset } from '../state/InstrumentPreset';
 import { CollapsibleSection } from './CollapsibleSection';
 
 interface PresetPanelProps {
+  factoryPresets: SavedPreset[];
   presets: SavedPreset[];
   selectedId: string | null;
   nameDraft: string;
   status: string | null;
+  factorySelected: boolean;
   onNameDraftChange: (name: string) => void;
   onSelect: (id: string) => void;
   onSave: () => void;
@@ -18,10 +20,12 @@ interface PresetPanelProps {
 }
 
 export function PresetPanel({
+  factoryPresets,
   presets,
   selectedId,
   nameDraft,
   status,
+  factorySelected,
   onNameDraftChange,
   onSelect,
   onSave,
@@ -33,13 +37,18 @@ export function PresetPanel({
 }: PresetPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const empty = factoryPresets.length === 0 && presets.length === 0;
 
   return (
     <CollapsibleSection
       mode="mobile"
       className="panel preset-panel"
       title="Presets"
-      actions={<span className="panel-hint">{presets.length} saved</span>}
+      actions={
+        <span className="panel-hint">
+          {factoryPresets.length} factory · {presets.length} saved
+        </span>
+      }
     >
       <div className="field">
         <label className="label" htmlFor="preset-name">
@@ -61,17 +70,38 @@ export function PresetPanel({
         <select
           id="preset-list"
           value={selectedId ?? ''}
-          onChange={(e) => onSelect(e.target.value)}
+          onChange={(e) => {
+            setConfirmDelete(false);
+            onSelect(e.target.value);
+          }}
         >
           <option value="" disabled>
-            {presets.length === 0 ? 'No presets yet' : 'Select preset…'}
+            {empty ? 'No presets yet' : 'Select preset…'}
           </option>
-          {presets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
+          {factoryPresets.length > 0 && (
+            <optgroup label="Inspired by">
+              {factoryPresets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {presets.length > 0 && (
+            <optgroup label="Yours">
+              {presets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
         </select>
+        {factorySelected && (
+          <p className="hint">
+            Factory patches are read-only. Save creates your own copy.
+          </p>
+        )}
       </div>
 
       <div className="preset-actions">
@@ -89,7 +119,7 @@ export function PresetPanel({
         <button
           type="button"
           className="btn"
-          disabled={!selectedId}
+          disabled={!selectedId || factorySelected}
           onClick={() => {
             if (!confirmDelete) {
               setConfirmDelete(true);

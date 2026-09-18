@@ -191,10 +191,16 @@ export function HarmonyControls({
               </option>
             ))}
           </select>
+          {(harmonyId === 'sub' || harmonyId === 'sub2') && (
+            <p className="hint">
+              Enable extra oscillators to stack more osc+sub pairs (each pair one
+              octave higher).
+            </p>
+          )}
         </div>
       </div>
 
-      {isAdsr ? (
+      {isAdsr && (
         <>
           <div className="panel-subheader">
             <span className="panel-title">Envelope</span>
@@ -245,81 +251,79 @@ export function HarmonyControls({
             onChange={(release) => onAdsrChange({ ...adsr, release })}
           />
         </>
-      ) : (
-        <>
-          <div className="panel-subheader">
-            <span className="panel-title">Arpeggiator</span>
-            <div className="panel-header-actions">
-              <button
-                type="button"
-                className={`btn btn-ghost ${arp.enabled ? 'active' : ''}`}
-                onClick={() => onArpChange({ ...arp, enabled: !arp.enabled })}
-              >
-                {arp.enabled ? 'On' : 'Off'}
-              </button>
-              <RandomizeButton
-                compact
-                title="Randomize arpeggiator"
-                onClick={() => onArpChange(randomArpState())}
-              />
-            </div>
-          </div>
-
-          <div className="field">
-            <div className="field-row">
-              <label className="label" htmlFor="arp-mode">
-                Pattern
-              </label>
-              <RandomizeButton
-                compact
-                disabled={!arp.enabled}
-                title="Randomize arp pattern"
-                onClick={() =>
-                  onArpChange({ ...arp, mode: randPick(ARP_MODES).id })
-                }
-              />
-            </div>
-            <select
-              id="arp-mode"
-              value={arp.mode}
-              disabled={!arp.enabled}
-              onChange={(e) =>
-                onArpChange({ ...arp, mode: e.target.value as ArpMode })
-              }
-            >
-              {ARP_MODES.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <SliderField
-            id="arp-rate"
-            label="Rate"
-            value={arp.rateHz}
-            min={0.1}
-            max={12}
-            step={0.05}
-            display={`${arp.rateHz.toFixed(2)} Hz`}
-            disabled={!arp.enabled}
-            onChange={(rateHz) => onArpChange({ ...arp, rateHz })}
-          />
-
-          <SliderField
-            id="arp-gate"
-            label="Gate"
-            value={arp.gate}
-            min={0.1}
-            max={1}
-            step={0.01}
-            display={arp.gate.toFixed(2)}
-            disabled={!arp.enabled}
-            onChange={(gate) => onArpChange({ ...arp, gate })}
-          />
-        </>
       )}
+
+      <div className="panel-subheader">
+        <span className="panel-title">Arpeggiator</span>
+        <div className="panel-header-actions">
+          <button
+            type="button"
+            className={`btn btn-ghost ${arp.enabled ? 'active' : ''}`}
+            onClick={() => onArpChange({ ...arp, enabled: !arp.enabled })}
+          >
+            {arp.enabled ? 'On' : 'Off'}
+          </button>
+          <RandomizeButton
+            compact
+            title="Randomize arpeggiator"
+            onClick={() => onArpChange(randomArpState())}
+          />
+        </div>
+      </div>
+
+      <div className="field">
+        <div className="field-row">
+          <label className="label" htmlFor="arp-mode">
+            Pattern
+          </label>
+          <RandomizeButton
+            compact
+            disabled={!arp.enabled}
+            title="Randomize arp pattern"
+            onClick={() =>
+              onArpChange({ ...arp, mode: randPick(ARP_MODES).id })
+            }
+          />
+        </div>
+        <select
+          id="arp-mode"
+          value={arp.mode}
+          disabled={!arp.enabled}
+          onChange={(e) =>
+            onArpChange({ ...arp, mode: e.target.value as ArpMode })
+          }
+        >
+          {ARP_MODES.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <SliderField
+        id="arp-rate"
+        label="Rate"
+        value={arp.rateHz}
+        min={0.1}
+        max={12}
+        step={0.05}
+        display={`${arp.rateHz.toFixed(2)} Hz`}
+        disabled={!arp.enabled}
+        onChange={(rateHz) => onArpChange({ ...arp, rateHz })}
+      />
+
+      <SliderField
+        id="arp-gate"
+        label="Gate"
+        value={arp.gate}
+        min={0.1}
+        max={1}
+        step={0.01}
+        display={arp.gate.toFixed(2)}
+        disabled={!arp.enabled}
+        onChange={(gate) => onArpChange({ ...arp, gate })}
+      />
 
       <SliderField
         id="master"
@@ -332,13 +336,20 @@ export function HarmonyControls({
         onChange={onMasterVolumeChange}
       />
 
-      <button
-        type="button"
-        className={`btn drone-btn ${audioOn ? 'btn-active' : 'btn-primary'}`}
-        onClick={onToggleAudio}
-      >
-        {audioOn ? 'Stop' : 'Start'}
-      </button>
+      {!isAdsr && (
+        <button
+          type="button"
+          className={`btn drone-btn ${audioOn ? 'btn-active' : 'btn-primary'}`}
+          onClick={onToggleAudio}
+        >
+          {audioOn ? 'Stop' : 'Start'}
+        </button>
+      )}
+      {isAdsr && (
+        <p className="panel-hint input-hint">
+          Play notes to sound — audio starts automatically
+        </p>
+      )}
     </CollapsibleSection>
   );
 }

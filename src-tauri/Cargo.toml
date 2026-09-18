@@ -1,7 +1,7 @@
 [package]
 name = "mutating-waveform-synth"
-version = "1.0.1"
-description = "Formula-shaped wavetable synth with mutating LFOs"
+version = "1.1.0"
+description = "Math-shaped wavetable synth with mutating LFOs"
 authors = ["CiaccoDavide"]
 license = "MIT"
 repository = "https://github.com/CiaccoDavide/mutating-waveform-synth"

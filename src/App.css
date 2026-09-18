@@ -50,11 +50,36 @@
   color: var(--text);
 }
 
-.app-brand p {
-  margin: 0.35rem 0 0;
-  font-size: 0.85rem;
+.app-brand p,
+.app-meta {
+  margin: 0.28rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
+  font-size: 0.68rem;
   color: var(--text-dim);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+}
+
+.app-meta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.app-meta a:hover {
+  color: var(--accent);
+}
+
+.app-meta-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .monitor-strip {
@@ -344,26 +369,23 @@
 .btn-random {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
-  border: 1px solid var(--border);
+  border: none;
   background: transparent;
   color: var(--text-dim);
   border-radius: var(--radius);
-  padding: 0.2rem 0.45rem;
+  padding: 0.15rem;
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease,
-    background 0.15s ease;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 
 .btn-random:hover:not(:disabled) {
   color: var(--amber);
-  border-color: var(--amber);
-  background: var(--amber-soft);
 }
 
 .btn-random:disabled {
@@ -372,7 +394,7 @@
 }
 
 .btn-random-compact {
-  padding: 0.15rem 0.3rem;
+  padding: 0.1rem;
 }
 
 .btn-random-icon {
@@ -418,6 +440,13 @@
   font-size: 0.72rem;
   color: var(--danger);
   font-family: var(--font-mono);
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  line-height: 1.35;
 }
 
 .lfo-stack {

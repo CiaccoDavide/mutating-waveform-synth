@@ -1,5 +1,6 @@
 import type { FormulaPreset } from '../audio/FormulaCompiler';
 import { PRESET_TIER_LABELS } from '../audio/FormulaCompiler';
+import type { FmState } from '../audio/EffectsModel';
 import {
   createDefaultMutators,
   LFO_SHAPES,
@@ -22,9 +23,11 @@ interface FormulaPanelProps {
   presets: FormulaPreset[];
   selectedPresetId: string;
   mutators: MutatorState;
+  fm: FmState;
   onExpressionChange: (value: string) => void;
   onPresetChange: (id: string) => void;
   onMutatorsChange: (next: MutatorState) => void;
+  onFmChange: (next: FmState) => void;
 }
 
 function randomSub(): SubLfoState {
@@ -340,9 +343,11 @@ export function FormulaPanel({
   presets,
   selectedPresetId,
   mutators,
+  fm,
   onExpressionChange,
   onPresetChange,
   onMutatorsChange,
+  onFmChange,
 }: FormulaPanelProps) {
   const randomizeSection = () => {
     const preset = randPick(presets);
@@ -381,6 +386,12 @@ export function FormulaPanel({
           ))}
           <option value="custom">Custom</option>
         </select>
+        {presets.find((p) => p.id === selectedPresetId)?.tier === 'character' && (
+          <p className="hint">
+            Character waves are timbre bases — load an Inspired-by preset for a
+            full patch.
+          </p>
+        )}
       </div>
 
       <div className="field">
@@ -397,6 +408,42 @@ export function FormulaPanel({
         />
         {error && <p className="formula-error">{error}</p>}
       </div>
+
+      <div className="panel-subheader">
+        <span className="panel-title">FM Operators</span>
+        <button
+          type="button"
+          className={`btn btn-ghost ${fm.enabled ? 'active' : ''}`}
+          onClick={() => onFmChange({ ...fm, enabled: !fm.enabled })}
+        >
+          {fm.enabled ? 'On' : 'Off'}
+        </button>
+      </div>
+      <p className="hint">
+        2-op phase modulation replaces the wavetable while enabled
+      </p>
+      <SliderField
+        id="fm-ratio"
+        label="Ratio"
+        value={fm.ratio}
+        min={0.25}
+        max={16}
+        step={0.01}
+        display={fm.ratio.toFixed(2)}
+        disabled={!fm.enabled}
+        onChange={(ratio) => onFmChange({ ...fm, ratio })}
+      />
+      <SliderField
+        id="fm-index"
+        label="Index"
+        value={fm.index}
+        min={0}
+        max={12}
+        step={0.01}
+        display={fm.index.toFixed(2)}
+        disabled={!fm.enabled}
+        onChange={(index) => onFmChange({ ...fm, index })}
+      />
 
       <div className="panel-subheader">
         <span className="panel-title">Time Mutators</span>

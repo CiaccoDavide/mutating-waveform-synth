@@ -4,11 +4,27 @@ import type { FilterState } from '../audio/FilterModel';
 import type { HarmonyPresetId, VoiceState } from '../audio/HarmonyModel';
 import type { MutatorState } from '../audio/LfoModel';
 import type { PlayMode } from '../input/RootInput';
+import {
+  createDefaultEffects,
+  createDefaultFm,
+  createDefaultLadder,
+  effectsFromSlots,
+  effectsToSlots,
+  normalizeEffects,
+  normalizeFm,
+  normalizeLadder,
+  type EffectSlot,
+  type EffectsState,
+  type FmState,
+  type LadderState,
+} from '../audio/EffectsModel';
 import { DEFAULT_ADSR } from '../audio/Envelope';
 import { DEFAULT_ARP } from '../audio/Arpeggiator';
 
-export const PRESET_SCHEMA_VERSION = 2;
+export const PRESET_SCHEMA_VERSION = 3;
 export const PRESET_STORAGE_KEY = 'mwd-global-presets-v1';
+/** Bump when factory patch DSP changes and new seeded ids should appear */
+export const CURRENT_FACTORY_SEED_VERSION = 1;
 
 export interface InstrumentSnapshot {
   expression: string;
@@ -26,14 +42,26 @@ export interface InstrumentSnapshot {
   voices: VoiceState[];
   selectedVoice: number;
   selectedFilter: number;
+  /** Post-filter FX (chorus / delay / reverb) — schema v3 */
+  effects?: EffectSlot[] | EffectsState;
+  ladder?: LadderState;
+  fm?: FmState;
 }
 
 export function normalizeSnapshot(snap: InstrumentSnapshot): InstrumentSnapshot {
+  const effectsRaw = snap.effects;
+  const effectsState = Array.isArray(effectsRaw)
+    ? effectsFromSlots(effectsRaw)
+    : normalizeEffects(effectsRaw);
+
   return {
     ...snap,
     playMode: snap.playMode === 'adsr' ? 'adsr' : 'drone',
     adsr: snap.adsr ? { ...DEFAULT_ADSR, ...snap.adsr } : { ...DEFAULT_ADSR },
     arp: snap.arp ? { ...DEFAULT_ARP, ...snap.arp } : { ...DEFAULT_ARP },
+    effects: effectsToSlots(effectsState),
+    ladder: normalizeLadder(snap.ladder),
+    fm: normalizeFm(snap.fm),
   };
 }
 
@@ -49,6 +77,8 @@ export interface SavedPreset {
 export interface PresetLibrary {
   version: number;
   presets: SavedPreset[];
+  /** Tracks which factory-seed generation has been applied */
+  factorySeedVersion?: number;
 }
 
 export function createPresetId(): string {
@@ -58,19 +88,37 @@ export function createPresetId(): string {
 export function loadPresetLibrary(): PresetLibrary {
   try {
     const raw = localStorage.getItem(PRESET_STORAGE_KEY);
-    if (!raw) return { version: PRESET_SCHEMA_VERSION, presets: [] };
+    if (!raw) {
+      return {
+        version: PRESET_SCHEMA_VERSION,
+        presets: [],
+        factorySeedVersion: 0,
+      };
+    }
     const parsed = JSON.parse(raw) as PresetLibrary;
     if (!parsed || !Array.isArray(parsed.presets)) {
-      return { version: PRESET_SCHEMA_VERSION, presets: [] };
+      return {
+        version: PRESET_SCHEMA_VERSION,
+        presets: [],
+        factorySeedVersion: 0,
+      };
     }
     return {
       version: PRESET_SCHEMA_VERSION,
+      factorySeedVersion:
+        typeof parsed.factorySeedVersion === 'number'
+          ? parsed.factorySeedVersion
+          : 0,
       presets: parsed.presets.filter(
         (p) => p && typeof p.id === 'string' && p.snapshot,
       ),
     };
   } catch {
-    return { version: PRESET_SCHEMA_VERSION, presets: [] };
+    return {
+      version: PRESET_SCHEMA_VERSION,
+      presets: [],
+      factorySeedVersion: 0,
+    };
   }
 }
 
@@ -79,6 +127,7 @@ export function savePresetLibrary(library: PresetLibrary): void {
     PRESET_STORAGE_KEY,
     JSON.stringify({
       version: PRESET_SCHEMA_VERSION,
+      factorySeedVersion: library.factorySeedVersion ?? 0,
       presets: library.presets,
     }),
   );
@@ -92,7 +141,11 @@ export function upsertPreset(
   const presets = [...library.presets];
   if (idx >= 0) presets[idx] = preset;
   else presets.unshift(preset);
-  return { version: PRESET_SCHEMA_VERSION, presets };
+  return {
+    version: PRESET_SCHEMA_VERSION,
+    factorySeedVersion: library.factorySeedVersion,
+    presets,
+  };
 }
 
 export function deletePreset(
@@ -101,9 +154,18 @@ export function deletePreset(
 ): PresetLibrary {
   return {
     version: PRESET_SCHEMA_VERSION,
+    factorySeedVersion: library.factorySeedVersion,
     presets: library.presets.filter((p) => p.id !== id),
   };
 }
+
+export {
+  createDefaultEffects,
+  createDefaultFm,
+  createDefaultLadder,
+  effectsToSlots,
+  effectsFromSlots,
+};
 
 export function exportPresetToFile(preset: SavedPreset): void {
   const blob = new Blob([JSON.stringify(preset, null, 2)], {

@@ -1,7 +1,6 @@
 /**
  * Wavetable oscillator AudioWorklet processor.
- * Receives Float32Array tables via port messages and morphs between
- * current and next table for click-free updates.
+ * Optional 2-op FM path (sin carrier + sin modulator) when fmEnabled.
  */
 class WavetableProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -12,11 +11,14 @@ class WavetableProcessor extends AudioWorkletProcessor {
     this.tableB = new Float32Array(2048);
     this.tableSize = 2048;
     this.phase = 0;
-    this.morph = 1; // 1 = fully on tableB (current)
+    this.morph = 1;
     this.morphSpeed = 0.002;
     this.frequency = 110;
     this.gain = 0.3;
     this.active = false;
+    this.fmEnabled = false;
+    this.fmRatio = 2;
+    this.fmIndex = 1.5;
 
     for (let i = 0; i < this.tableSize; i += 1) {
       const x = (i / this.tableSize) * Math.PI * 2;
@@ -29,7 +31,6 @@ class WavetableProcessor extends AudioWorkletProcessor {
       if (!data || typeof data !== 'object') return;
       if (data.type === 'table' && data.samples) {
         const samples = data.samples;
-        // Swap: current B becomes A, new table becomes B, morph from 0→1
         this.tableA.set(this.tableB);
         const n = Math.min(samples.length, this.tableSize);
         for (let i = 0; i < n; i += 1) this.tableB[i] = samples[i];
@@ -40,6 +41,11 @@ class WavetableProcessor extends AudioWorkletProcessor {
         if (typeof data.gain === 'number') this.gain = data.gain;
         if (typeof data.active === 'boolean') this.active = data.active;
         if (typeof data.morphSpeed === 'number') this.morphSpeed = data.morphSpeed;
+      }
+      if (data.type === 'fm') {
+        if (typeof data.enabled === 'boolean') this.fmEnabled = data.enabled;
+        if (typeof data.ratio === 'number') this.fmRatio = data.ratio;
+        if (typeof data.index === 'number') this.fmIndex = data.index;
       }
     };
   }
@@ -69,7 +75,9 @@ class WavetableProcessor extends AudioWorkletProcessor {
    */
   sample(table, phase) {
     const size = this.tableSize;
-    const pos = phase * size;
+    let p = phase - Math.floor(phase);
+    if (p < 0) p += 1;
+    const pos = p * size;
     const i0 = Math.floor(pos) % size;
     const i1 = (i0 + 1) % size;
     const frac = pos - Math.floor(pos);
@@ -85,6 +93,7 @@ class WavetableProcessor extends AudioWorkletProcessor {
     const constFreq = freqParam.length === 1;
     const constGain = gainParam.length === 1;
     const sr = sampleRate;
+    const twoPi = Math.PI * 2;
 
     for (let i = 0; i < channel.length; i += 1) {
       if (this.morph < 1) {
@@ -103,16 +112,23 @@ class WavetableProcessor extends AudioWorkletProcessor {
         continue;
       }
 
-      const a = this.sample(this.tableA, this.phase);
-      const b = this.sample(this.tableB, this.phase);
-      const m = this.morph;
-      channel[i] = (a * (1 - m) + b * m) * gain;
+      let sample;
+      if (this.fmEnabled) {
+        const mod =
+          Math.sin(this.phase * twoPi * this.fmRatio) * this.fmIndex;
+        sample = Math.sin(this.phase * twoPi + mod);
+      } else {
+        const a = this.sample(this.tableA, this.phase);
+        const b = this.sample(this.tableB, this.phase);
+        const m = this.morph;
+        sample = a * (1 - m) + b * m;
+      }
+      channel[i] = sample * gain;
 
       this.phase += freq / sr;
       if (this.phase >= 1) this.phase -= Math.floor(this.phase);
     }
 
-    // Mirror to other channels if stereo
     for (let c = 1; c < output.length; c += 1) {
       output[c].set(channel);
     }

@@ -14,6 +14,7 @@ import {
   type ParamLfo,
 } from '../audio/FilterModel';
 import type { LfoShape } from '../audio/LfoModel';
+import type { LadderState } from '../audio/EffectsModel';
 import { CollapsibleSection } from './CollapsibleSection';
 import { RandomizeButton } from './RandomizeButton';
 import { SliderField } from './SliderField';
@@ -24,6 +25,8 @@ interface FilterPanelProps {
   selectedIndex: number;
   onSelect: (index: number) => void;
   onChange: (filters: FilterState[]) => void;
+  ladder: LadderState;
+  onLadderChange: (ladder: LadderState) => void;
 }
 
 function randomParamLfo(): ParamLfo {
@@ -182,6 +185,8 @@ export function FilterPanel({
   selectedIndex,
   onSelect,
   onChange,
+  ladder,
+  onLadderChange,
 }: FilterPanelProps) {
   const filter = filters[selectedIndex] ?? filters[0];
   const [nowSec, setNowSec] = useState(() => performance.now() * 0.001);
@@ -420,6 +425,53 @@ export function FilterPanel({
       >
         Reset Filters
       </button>
+
+      <div className="panel-subheader">
+        <span className="panel-title">Ladder</span>
+        <button
+          type="button"
+          className={`btn btn-ghost ${ladder.enabled ? 'active' : ''}`}
+          onClick={() =>
+            onLadderChange({ ...ladder, enabled: !ladder.enabled })
+          }
+        >
+          {ladder.enabled ? 'On' : 'Off'}
+        </button>
+      </div>
+      <p className="hint">4-pole transistor-ladder after the biquad bank</p>
+      <SliderField
+        id="ladder-cutoff"
+        label="Cutoff"
+        value={ladder.cutoff}
+        min={40}
+        max={12000}
+        step={1}
+        display={`${Math.round(ladder.cutoff)} Hz`}
+        disabled={!ladder.enabled}
+        onChange={(cutoff) => onLadderChange({ ...ladder, cutoff })}
+      />
+      <SliderField
+        id="ladder-res"
+        label="Resonance"
+        value={ladder.resonance}
+        min={0}
+        max={1}
+        step={0.01}
+        display={ladder.resonance.toFixed(2)}
+        disabled={!ladder.enabled}
+        onChange={(resonance) => onLadderChange({ ...ladder, resonance })}
+      />
+      <SliderField
+        id="ladder-drive"
+        label="Drive"
+        value={ladder.drive}
+        min={0}
+        max={1}
+        step={0.01}
+        display={ladder.drive.toFixed(2)}
+        disabled={!ladder.enabled}
+        onChange={(drive) => onLadderChange({ ...ladder, drive })}
+      />
     </CollapsibleSection>
   );
 }

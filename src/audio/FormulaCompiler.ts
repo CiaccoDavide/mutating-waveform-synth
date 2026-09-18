@@ -328,7 +328,7 @@ export interface FormulaPreset {
   name: string;
   expression: string;
   /** Pedagogical tier shown in the preset list */
-  tier: 'static' | 'simple-lfo' | 'multi-lfo' | 'sub-lfo' | 'complex';
+  tier: 'static' | 'simple-lfo' | 'multi-lfo' | 'sub-lfo' | 'complex' | 'character';
 }
 
 export const FORMULA_PRESETS: FormulaPreset[] = [
@@ -469,6 +469,48 @@ export const FORMULA_PRESETS: FormulaPreset[] = [
     expression:
       'sin(x + sin(t*0.15 + 0.6*sin(t*0.04))) + 0.35*sin(3*x + 0.8*sin(t*0.22 + 0.5*sin(t*0.06))) + 0.15*sin(5*x - t*0.1)',
   },
+
+  // —— Character (classic-synth-inspired wavetable bases) ——
+  {
+    id: 'char-ladder',
+    name: 'Ladder Saw',
+    tier: 'character',
+    expression:
+      'sin(x) + 0.5*sin(2*x) + 0.33*sin(3*x) + 0.25*sin(4*x) + 0.2*sin(5*x) + 0.16*sin(6*x) + 0.12*sin(7*x) + 0.1*sin(8*x)',
+  },
+  {
+    id: 'char-acid',
+    name: 'Acid Edge',
+    tier: 'character',
+    expression:
+      '0.55*(sin(x)+0.45*sin(2*x)+0.3*sin(3*x)+0.2*sin(4*x)) + 0.45*(sin(x)+0.28*sin(3*x)+0.16*sin(5*x)+0.1*sin(7*x))',
+  },
+  {
+    id: 'char-chorus',
+    name: 'Chorus Pulse',
+    tier: 'character',
+    expression: 'tanh(2.2*sin(x)) + 0.18*sin(3*x) - 0.12*sin(2*x)',
+  },
+  {
+    id: 'char-keys',
+    name: 'Electric Keys',
+    tier: 'character',
+    expression: 'sin(x) + 0.5*sin(pi*x) + 0.28*sin(7*x) + 0.12*sin(11*x)',
+  },
+  {
+    id: 'char-cinema',
+    name: 'Cinema Warm',
+    tier: 'character',
+    expression:
+      'sin(x) + 0.4*sin(2*x) + 0.28*sin(3*x) + 0.15*sin(4*x) + 0.1*sin(5*x) + 0.06*sin(7*x)',
+  },
+  {
+    id: 'char-brass',
+    name: 'Poly Brass',
+    tier: 'character',
+    expression:
+      'sin(x) + 0.42*sin(2*x) + 0.38*sin(3*x) + 0.18*sin(4*x) + 0.22*sin(5*x) + 0.1*sin(6*x)',
+  },
 ];
 
 export const PRESET_TIER_LABELS: Record<FormulaPreset['tier'], string> = {
@@ -477,4 +519,5 @@ export const PRESET_TIER_LABELS: Record<FormulaPreset['tier'], string> = {
   'multi-lfo': 'Multi LFO',
   'sub-lfo': 'Sub-LFO',
   complex: 'Complex',
+  character: 'Character',
 };

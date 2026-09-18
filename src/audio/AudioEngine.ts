@@ -13,6 +13,15 @@ import {
   triggerRelease,
   type AdsrParams,
 } from './Envelope';
+import {
+  createDefaultEffects,
+  createDefaultFm,
+  createDefaultLadder,
+  type EffectsState,
+  type FmState,
+  type LadderState,
+} from './EffectsModel';
+import { FxGraph } from './FxGraph';
 
 export type PlayMode = 'drone' | 'adsr';
 
@@ -36,6 +45,7 @@ export class AudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private filterNodes: BiquadFilterNode[] = [];
+  private fxGraph: FxGraph | null = null;
   private analyser: AnalyserNode | null = null;
   private voices: {
     node: AudioWorkletNode;
@@ -46,6 +56,9 @@ export class AudioEngine {
   private started = false;
   private masterVolume = 0.55;
   private filterStates: FilterState[] = createDefaultFilterBank();
+  private ladderState: LadderState = createDefaultLadder();
+  private effectsState: EffectsState = createDefaultEffects();
+  private fmState: FmState = createDefaultFm();
   private timeDomain = new Uint8Array(0);
   private frequencyData = new Uint8Array(0);
   private voiceActive = new Array<boolean>(VOICE_COUNT).fill(false);
@@ -55,6 +68,7 @@ export class AudioEngine {
   private adsr: AdsrParams = { ...DEFAULT_ADSR };
   private heldNotes = new Map<number, HeldNote>();
   private voiceMidi = new Array<number>(VOICE_COUNT).fill(-1);
+  private voiceBaseGain = new Array<number>(VOICE_COUNT).fill(0);
   private noteOrder = 0;
   private freeTimers = new Map<number, number>();
 
@@ -112,8 +126,15 @@ export class AudioEngine {
     this.timeDomain = new Uint8Array(analyser.fftSize);
     this.frequencyData = new Uint8Array(analyser.frequencyBinCount);
 
+    const fx = new FxGraph();
+    await fx.init(ctx);
+    this.fxGraph = fx;
+    fx.setLadder(this.ladderState);
+    fx.setEffects(this.effectsState);
+
     const lastFilter = this.filterNodes[FILTER_COUNT - 1]!;
-    lastFilter.connect(master);
+    lastFilter.connect(fx.input!);
+    fx.output!.connect(master);
     master.connect(analyser);
     analyser.connect(ctx.destination);
 
@@ -135,6 +156,7 @@ export class AudioEngine {
       panner.connect(firstFilter);
       this.voices.push({ node, panner, gain });
     }
+    this.pushFm();
 
     this.started = true;
     if (ctx.state === 'suspended') await ctx.resume();
@@ -143,6 +165,8 @@ export class AudioEngine {
   async stop(): Promise<void> {
     if (!this.ctx) return;
     this.clearAdsrState();
+    this.fxGraph?.dispose();
+    this.fxGraph = null;
     await this.ctx.close();
     this.ctx = null;
     this.masterGain = null;
@@ -163,6 +187,33 @@ export class AudioEngine {
         this.ctx!.currentTime,
         0.03,
       );
+    }
+  }
+
+  setLadder(state: LadderState) {
+    this.ladderState = { ...state };
+    this.fxGraph?.setLadder(state);
+  }
+
+  setEffects(effects: EffectsState) {
+    this.effectsState = effects;
+    this.fxGraph?.setEffects(effects);
+  }
+
+  setFm(fm: FmState) {
+    this.fmState = { ...fm };
+    this.pushFm();
+  }
+
+  private pushFm() {
+    if (!this.workletReady) return;
+    for (const voice of this.voices) {
+      voice.node.port.postMessage({
+        type: 'fm',
+        enabled: this.fmState.enabled,
+        ratio: this.fmState.ratio,
+        index: this.fmState.index,
+      });
     }
   }
 
@@ -331,6 +382,7 @@ export class AudioEngine {
 
       this.clearFreeTimer(vi);
       this.voiceMidi[vi] = midi;
+      this.voiceBaseGain[vi] = oscGain;
       this.voiceActive[vi] = true;
 
       const freqParam = voice.node.parameters.get('frequency');
@@ -421,6 +473,7 @@ export class AudioEngine {
 
   private freeVoice(index: number) {
     this.voiceMidi[index] = -1;
+    this.voiceBaseGain[index] = 0;
     this.voiceActive[index] = false;
     this.clearFreeTimer(index);
     const voice = this.voices[index];
@@ -469,8 +522,42 @@ export class AudioEngine {
     this.freeTimers.clear();
     this.heldNotes.clear();
     this.voiceMidi.fill(-1);
+    this.voiceBaseGain.fill(0);
     this.voiceActive.fill(false);
     this.noteOrder = 0;
+  }
+
+  /**
+   * Apply arp gain multipliers to sounding ADSR chord voices.
+   * `mults` is indexed by oscillator-panel voice index; chord slots map in enablement order.
+   */
+  applyAdsrArp(voices: VoiceState[], mults: number[]) {
+    if (!this.workletReady || !this.ctx || this.playMode !== 'adsr') return;
+
+    const slots: number[] = [];
+    for (let i = 0; i < voices.length; i += 1) {
+      if (voices[i]?.enabled) slots.push(i);
+    }
+    if (slots.length === 0) slots.push(0);
+
+    const now = this.ctx.currentTime;
+    for (const held of this.heldNotes.values()) {
+      for (let s = 0; s < held.voiceIndices.length; s += 1) {
+        const vi = held.voiceIndices[s]!;
+        const voice = this.voices[vi];
+        if (!voice) continue;
+        const panelIdx = slots[s] ?? slots[slots.length - 1]!;
+        const mult = mults[panelIdx] ?? 1;
+        const gain = (this.voiceBaseGain[vi] ?? 0) * mult;
+        const gainParam = voice.node.parameters.get('gain');
+        gainParam?.setTargetAtTime(gain, now, 0.015);
+        voice.node.port.postMessage({
+          type: 'params',
+          active: gain > 0.0001,
+          gain,
+        });
+      }
+    }
   }
 
   getSnapshot(): EngineSnapshot | null {

@@ -5,6 +5,27 @@ All notable changes to Mutating Waveform Synth are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-18
+
+### Added
+
+- **Post-filter FX bus** — chorus, delay (digital / ping-pong / tape), algorithmic reverb (room / hall / plate / freeverb) with wet/dry mix
+- **Ladder filter** — 4-pole transistor-ladder stage (cutoff, resonance, drive) after the biquad bank
+- **2-op FM** — global phase-modulation path (ratio + index) on wavetable voices; replaces the table while enabled
+- **Effects panel** UI; ladder controls in Filters; FM controls in Formula
+- **Character** formula presets (Ladder Saw, Acid Edge, Chorus Pulse, Electric Keys, Cinema Warm, Poly Brass)
+- **Inspired by** factory instrument patches (Ladder Lead, Acid Squelch, Chorus Pad, Electric Keys, Cinema Pad, Poly Brass) using real DSP
+- Auto-seed editable `seeded-*` copies of factory patches into localStorage (once per seed version)
+- Harmony presets **Osc + Sub** and **Osc + Sub (−2)** with octave-stacked pairs when more voices are enabled
+- ADSR arpeggiator gating for chord tones; Start is no longer required in ADSR mode (audio unlocks on note)
+
+### Changed
+
+- Preset schema **v3** (`effects`, `ladder`, `fm`); v2 snapshots still load with defaults
+- Randomize controls are icon-only (no border)
+- Brand meta under the title: GitHub · MIT · author links
+- Factory patches retuned for ladder, chorus, delay, reverb, and FM where appropriate
+
 ## [1.0.1] - 2026-09-18
 
 ### Added

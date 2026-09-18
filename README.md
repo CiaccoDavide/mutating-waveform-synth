@@ -1,23 +1,42 @@
 # Mutating Waveform Synth
 
-Formula-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, and MIDI.
+Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, FX, and MIDI.
 
-**v1.0.1** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
+**v1.1.0** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
 ## Features
 
-- **Formula wavetables** — expressions in `x` (phase) and `t` (time), with pedagogical presets from static waves to complex nested modulators
+- **Formula wavetables** — expressions in `x` (phase) and `t` (time), with pedagogical presets from static waves to complex nested modulators, plus **Character** bases inspired by classic synth timbres
+- **2-op FM** — optional global phase-modulation path (ratio + index) that replaces the wavetable while enabled
 - **Wave edit mode** — draw with control points (exact Steps/Linear formulas, Smooth via Fourier), then Apply
 - **Time mutators** — up to 3 LFOs + sub-LFOs that warp phase, fold, amp, and morph rate, then re-bake the shared table
-- **8 oscillators** — equal-temperament harmony or free frequencies, detune, gain, pan
-- **Filters** — three series biquads with per-parameter LFOs
-- **Play modes** — continuous drone (optional arpeggiator) or polyphonic ADSR
+- **8 oscillators** — equal-temperament harmony (incl. Osc + Sub / Osc + Sub −2) or free frequencies, detune, gain, pan; enable more voices to stack osc+sub pairs up the octaves
+- **Filters** — three series biquads with per-parameter LFOs, plus a **ladder** (4-pole) stage after the bank
+- **Effects** — chorus, multi-algorithm delay (digital / ping-pong / tape), and algorithmic reverb (room / hall / plate / freeverb)
+- **Play modes** — continuous drone (optional arpeggiator) or polyphonic ADSR (arp can gate chord tones; audio unlocks on first note)
 - **Input** — Web MIDI and PC keyboard (Z–M, octave via `,` / `.`)
-- **Presets** — save / load / import / export JSON patches in the browser
+- **Presets** — save / load / import / export JSON patches (schema v3); read-only **Inspired by** factory patches plus auto-seeded editable copies under **Yours** — approximations, not emulations of trademarked instruments
 - **Monitor strip** — scope, spectrum, spectrogram, LFO traces, voice activity, MIDI/KEY indicators
 - **Desktop app** — packaged with [Tauri](https://tauri.app/) for macOS, Windows, and Linux
+
+### Signal path
+
+```
+8 wavetable voices → pan → 3× biquad → ladder → chorus → delay → reverb → master → analyser → out
+```
+
+### Inspired-by factory patches
+
+| Patch | Character |
+| --- | --- |
+| Ladder Lead | Moog-ish fat saw + ladder + short delay |
+| Acid Squelch | 303-ish edge + resonant ladder + tape delay |
+| Chorus Pad | Juno-ish detuned poly + chorus + hall |
+| Electric Keys | DX-ish 2-op FM + plate |
+| Cinema Pad | CS-ish warm pad + soft chorus + hall |
+| Poly Brass | OB-ish unison/fifth + chorus + room |
 
 ## Try it
 
@@ -26,7 +45,7 @@ Formula-shaped wavetable synth: write an expression, morph it with nested LFOs, 
 | **Desktop** | Download the latest build from [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) (macOS Apple Silicon + Intel, Linux, Windows) |
 | **Web** | Build with `npm run build` and serve the `dist/` folder on your own host |
 
-Click **Start** once to unlock the audio context (browser gesture required on the web build).
+Click **Start** (drone) or play a note (ADSR) once to unlock the audio context on the web build.
 
 ## Develop
 
@@ -57,9 +76,9 @@ npm run tauri:build
 ## Stack
 
 - React 19 + Vite + TypeScript
-- Web Audio API + AudioWorklet wavetable voices
+- Web Audio API + AudioWorklets (wavetable, ladder, reverb) and native DelayNode FX
 - WebGL2 background visualizer
-- Tiny formula compiler (`sin`, `cos`, `tanh`, …)
+- Tiny formula compiler (`sin`, `cos`, `tanh`, `step`, `lerp`, …)
 - Tauri 2 for native shells
 
 ## License
