@@ -22,7 +22,7 @@ import { DEFAULT_ADSR } from '../audio/Envelope';
 import { DEFAULT_ARP } from '../audio/Arpeggiator';
 
 export const PRESET_SCHEMA_VERSION = 3;
-export const PRESET_STORAGE_KEY = 'mwd-global-presets-v1';
+export const PRESET_STORAGE_KEY = 'mws-global-presets-v1';
 /** Bump when factory patch DSP changes and new seeded ids should appear */
 export const CURRENT_FACTORY_SEED_VERSION = 1;
 
@@ -175,7 +175,7 @@ export function exportPresetToFile(preset: SavedPreset): void {
   const a = document.createElement('a');
   const safe = preset.name.replace(/[^\w\-]+/g, '_').slice(0, 48) || 'preset';
   a.href = url;
-  a.download = `${safe}.mwd.json`;
+  a.download = `${safe}.mws.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -187,7 +187,7 @@ export function exportLibraryToFile(library: PresetLibrary): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `mwd-presets-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `mws-presets-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

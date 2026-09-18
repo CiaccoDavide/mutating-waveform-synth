@@ -58,6 +58,7 @@ import {
 import { useRootInput } from './input/useRootInput';
 import { PresetPanel } from './ui/PresetPanel';
 import { EffectsPanel } from './ui/EffectsPanel';
+import { CollapsibleSection } from './ui/CollapsibleSection';
 import { MonitorStrip } from './ui/MonitorStrip';
 import {
   CONNECT_MODES,
@@ -975,16 +976,35 @@ export default function App() {
                 onArpChange={setArp}
                 onEnableMidi={enableMidi}
               />
-              <FilterPanel
-                filters={filters}
-                selectedIndex={selectedFilter}
-                onSelect={setSelectedFilter}
-                onChange={setFilters}
-                ladder={ladder}
-                onLadderChange={setLadder}
-              />
-              <EffectsPanel effects={effects} onChange={setEffects} />
-            </div>
+              <CollapsibleSection
+                mode="mobile"
+                className="panel filter-panel"
+                title="Filters and Effects"
+                actions={
+                  <span className="panel-hint">
+                    {filters.filter((f) => f.enabled).length} filters ·{' '}
+                    {
+                      [
+                        effects.chorus.enabled,
+                        effects.delay.enabled,
+                        effects.reverb.enabled,
+                      ].filter(Boolean).length
+                    }{' '}
+                    fx
+                  </span>
+                }
+              >
+                <FilterPanel
+                  filters={filters}
+                  selectedIndex={selectedFilter}
+                  onSelect={setSelectedFilter}
+                  onChange={setFilters}
+                  ladder={ladder}
+                  onLadderChange={setLadder}
+                />
+                <EffectsPanel effects={effects} onChange={setEffects} />
+              </CollapsibleSection>
+        </div>
       </section>
 
           <aside className="stage-right">

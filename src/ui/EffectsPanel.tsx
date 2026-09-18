@@ -3,7 +3,6 @@ import {
   REVERB_ALGORITHMS,
   type EffectsState,
 } from '../audio/EffectsModel';
-import { CollapsibleSection } from './CollapsibleSection';
 import { SliderField } from './SliderField';
 
 interface EffectsPanelProps {
@@ -15,17 +14,7 @@ export function EffectsPanel({ effects, onChange }: EffectsPanelProps) {
   const { chorus, delay, reverb } = effects;
 
   return (
-    <CollapsibleSection
-      mode="mobile"
-      className="panel filter-panel"
-      title="Effects"
-      actions={
-        <span className="panel-hint">
-          {[chorus.enabled, delay.enabled, reverb.enabled].filter(Boolean).length}{' '}
-          on
-        </span>
-      }
-    >
+    <>
       <div className="panel-subheader">
         <span className="panel-title">Chorus</span>
         <button
@@ -361,6 +350,6 @@ export function EffectsPanel({ effects, onChange }: EffectsPanelProps) {
           })
         }
       />
-    </CollapsibleSection>
+    </>
   );
 }

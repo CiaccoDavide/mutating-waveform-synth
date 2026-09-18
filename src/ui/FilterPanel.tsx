@@ -218,12 +218,10 @@ export function FilterPanel({
   const cutoffSlider = cutoffToSlider(filter.cutoff);
 
   return (
-    <CollapsibleSection
-      mode="mobile"
-      className="panel filter-panel"
-      title="Filters"
-      actions={
-        <>
+    <>
+      <div className="panel-subheader">
+        <span className="panel-title">Filters</span>
+        <div className="panel-header-actions">
           <span className="panel-hint">
             {filters.filter((f) => f.enabled).length} active
           </span>
@@ -231,9 +229,9 @@ export function FilterPanel({
             title="Randomize all filters"
             onClick={() => onChange(randomFilterBank())}
           />
-        </>
-      }
-    >
+        </div>
+      </div>
+
       <div className="filter-tabs">
         {filters.map((f, i) => (
           <button
@@ -472,7 +470,7 @@ export function FilterPanel({
         disabled={!ladder.enabled}
         onChange={(drive) => onLadderChange({ ...ladder, drive })}
       />
-    </CollapsibleSection>
+    </>
   );
 }
 

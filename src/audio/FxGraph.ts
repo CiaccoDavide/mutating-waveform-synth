@@ -356,7 +356,7 @@ export class FxGraph {
     tone.type = 'lowpass';
     tone.frequency.value = 4200;
     const shaper = ctx.createWaveShaper();
-    shaper.curve = this.makeTapeCurve(algorithm === 'tape' ? 2.5 : 1.1);
+    shaper.curve = this.makeTapeCurve(algorithm === 'tape' ? 2.5 : 1.1) as Float32Array<ArrayBuffer>;
 
     input.connect(dry);
     dry.connect(output);
