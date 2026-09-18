@@ -60,7 +60,8 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'Mutating Waveform Synth v__VERSION__'
           releaseBody: |
-            Desktop builds for macOS (Apple Silicon + Intel), Linux, and Windows, plus a universal Android APK.
+            Desktop builds for macOS (Apple Silicon + Intel), Linux, and Windows, plus a universal Android APK (sideload-signed).
+            Live demo: https://ciaccodavi.de/projects/mutating-waveform-synth
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -85,10 +86,11 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install Android SDK components
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973"
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973"
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -104,7 +106,7 @@ jobs:
         run: npm ci
 
       - name: Build Android APK
-        run: npx tauri android build --apk
+        run: npx tauri android build --apk --ci
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
 
@@ -122,6 +124,7 @@ jobs:
               -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
               -dname "CN=Android Debug,O=Android,C=US"
           fi
+          test -f "$UNSIGNED"
           ALIGNED="${UNSIGNED%.apk}-aligned.apk"
           "$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
           "$BUILD_TOOLS/apksigner" sign \
@@ -133,6 +136,8 @@ jobs:
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: ${{ steps.apk.outputs.file }}
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

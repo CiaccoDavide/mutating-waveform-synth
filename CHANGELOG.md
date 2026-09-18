@@ -5,6 +5,19 @@ All notable changes to Mutating Waveform Synth are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-09-18
+
+### Added
+
+- Mobile Play surface — floating Play button with touch piano and just-intonation hexagonal lattice
+- Live demo link in the README
+
+### Changed
+
+- Mobile layout puts the Formula panel first
+- Web favicon uses the Tauri waveform mark; asset paths stay relative
+- Android release CI uses `setup-android@v4` so the universal APK attaches to the GitHub release
+
 ## [1.1.2] - 2026-09-18
 
 ### Added

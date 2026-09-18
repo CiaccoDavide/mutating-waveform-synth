@@ -36,7 +36,7 @@ export interface EngineSnapshot {
 }
 
 interface HeldNote {
-  midi: number;
+  id: string;
   voiceIndices: number[];
   order: number;
 }
@@ -66,7 +66,8 @@ export class AudioEngine {
 
   private playMode: PlayMode = 'drone';
   private adsr: AdsrParams = { ...DEFAULT_ADSR };
-  private heldNotes = new Map<number, HeldNote>();
+  private heldNotes = new Map<string, HeldNote>();
+  /** -1 = free; otherwise a sentinel occupancy marker (MIDI or 1 for Hz notes) */
   private voiceMidi = new Array<number>(VOICE_COUNT).fill(-1);
   private voiceBaseGain = new Array<number>(VOICE_COUNT).fill(0);
   private noteOrder = 0;
@@ -354,15 +355,28 @@ export class AudioEngine {
     intervals: number[],
     voiceTemplate: Pick<VoiceState, 'gain' | 'pan'>[],
   ) {
-    if (!this.workletReady || !this.ctx || this.playMode !== 'adsr') return;
-    if (intervals.length === 0) return;
+    const freqs = intervals.map((interval) => midiToFreq(midi + interval));
+    this.adsrNoteOnFreq(`midi:${midi}`, freqs, velocity, voiceTemplate, midi);
+  }
 
-    // Retrigger same MIDI note
-    if (this.heldNotes.has(midi)) {
-      this.adsrNoteOff(midi, true);
+  /**
+   * Polyphonic note-on from exact frequencies (JI / microtonal), keyed by stable id.
+   */
+  adsrNoteOnFreq(
+    noteId: string,
+    frequencies: number[],
+    velocity: number,
+    voiceTemplate: Pick<VoiceState, 'gain' | 'pan'>[],
+    occupancyMarker = 1,
+  ) {
+    if (!this.workletReady || !this.ctx || this.playMode !== 'adsr') return;
+    if (frequencies.length === 0) return;
+
+    if (this.heldNotes.has(noteId)) {
+      this.adsrNoteOffId(noteId, true);
     }
 
-    const needed = intervals.length;
+    const needed = frequencies.length;
     this.ensureFreeVoices(needed);
 
     const free = this.listFreeVoices();
@@ -375,13 +389,12 @@ export class AudioEngine {
     for (let i = 0; i < needed; i += 1) {
       const vi = voiceIndices[i]!;
       const voice = this.voices[vi]!;
-      const interval = intervals[i]!;
+      const freq = Math.max(20, frequencies[i]!);
       const tmpl = voiceTemplate[i] ?? { gain: 0.3, pan: 0 };
-      const freq = midiToFreq(midi + interval);
       const oscGain = tmpl.gain * peakScale;
 
       this.clearFreeTimer(vi);
-      this.voiceMidi[vi] = midi;
+      this.voiceMidi[vi] = occupancyMarker;
       this.voiceBaseGain[vi] = oscGain;
       this.voiceActive[vi] = true;
 
@@ -403,18 +416,22 @@ export class AudioEngine {
       triggerAttack(voice.gain.gain, this.ctx, this.adsr, 1);
     }
 
-    this.heldNotes.set(midi, {
-      midi,
+    this.heldNotes.set(noteId, {
+      id: noteId,
       voiceIndices,
       order: this.noteOrder++,
     });
   }
 
   adsrNoteOff(midi: number, immediate = false) {
+    this.adsrNoteOffId(`midi:${midi}`, immediate);
+  }
+
+  adsrNoteOffId(noteId: string, immediate = false) {
     if (!this.ctx || this.playMode !== 'adsr') return;
-    const held = this.heldNotes.get(midi);
+    const held = this.heldNotes.get(noteId);
     if (!held) return;
-    this.heldNotes.delete(midi);
+    this.heldNotes.delete(noteId);
 
     for (const vi of held.voiceIndices) {
       const voice = this.voices[vi];
@@ -431,8 +448,8 @@ export class AudioEngine {
 
   releaseAllAdsr(immediate = false) {
     const notes = [...this.heldNotes.keys()];
-    for (const midi of notes) {
-      this.adsrNoteOff(midi, immediate);
+    for (const id of notes) {
+      this.adsrNoteOffId(id, immediate);
     }
     if (immediate) {
       this.clearAdsrState();
@@ -453,7 +470,7 @@ export class AudioEngine {
           if (!oldest || held.order < oldest.order) oldest = held;
         }
         if (!oldest) break;
-        this.adsrNoteOff(oldest.midi, true);
+        this.adsrNoteOffId(oldest.id, true);
       } else {
         const busy = this.voiceMidi.findIndex((m) => m !== -1);
         if (busy < 0) break;

@@ -56,6 +56,7 @@ import {
   type MutatorState,
 } from './audio/LfoModel';
 import { useRootInput } from './input/useRootInput';
+import { MobilePlaySurface } from './ui/MobilePlaySurface';
 import { PresetPanel } from './ui/PresetPanel';
 import { EffectsPanel } from './ui/EffectsPanel';
 import { CollapsibleSection } from './ui/CollapsibleSection';
@@ -253,6 +254,53 @@ export default function App() {
 
   const handleNoteOff = useCallback((midi: number) => {
     audioEngine.adsrNoteOff(midi);
+  }, []);
+
+  const handleFreqNoteOn = useCallback(
+    async (noteId: string, baseHz: number, velocity: number) => {
+      try {
+        await ensureAudioStarted();
+      } catch (err) {
+        console.error(err);
+        setCompileError(
+          err instanceof Error ? err.message : 'Failed to start audio',
+        );
+        return;
+      }
+
+      const vs = voicesRef.current;
+      const ints = intervalsRef.current;
+      const frequencies: number[] = [];
+      const templates: { gain: number; pan: number }[] = [];
+      for (let i = 0; i < vs.length; i += 1) {
+        const v = vs[i];
+        if (!v?.enabled) continue;
+        const interval =
+          ints[i] ??
+          ints[i % Math.max(1, ints.length)]! +
+            12 * Math.floor(i / Math.max(1, ints.length));
+        frequencies.push(baseHz * Math.pow(2, interval / 12));
+        templates.push({ gain: v.gain, pan: v.pan });
+      }
+      if (frequencies.length === 0) {
+        frequencies.push(baseHz);
+        templates.push({ gain: 0.35, pan: 0 });
+      }
+      audioEngine.adsrNoteOnFreq(noteId, frequencies, velocity, templates);
+      if (arpRef.current.enabled) {
+        const mults = computeArpGainMultipliers(
+          voicesRef.current,
+          arpRef.current,
+          performance.now() * 0.001,
+        );
+        audioEngine.applyAdsrArp(voicesRef.current, mults);
+      }
+    },
+    [ensureAudioStarted],
+  );
+
+  const handleFreqNoteOff = useCallback((noteId: string) => {
+    audioEngine.adsrNoteOffId(noteId);
   }, []);
 
   const { midiStatus, enableMidi, midiActive, keyboardActive } = useRootInput({
@@ -1034,6 +1082,22 @@ export default function App() {
             />
           </aside>
         </main>
+
+        <MobilePlaySurface
+          playMode={playMode}
+          playOctave={playOctave}
+          rootNote={rootNote}
+          rootOctave={rootOctave}
+          onPlayOctaveChange={(o) => {
+            setPlayOctave(o);
+            if (playMode === 'drone') setRootOctave(o);
+          }}
+          onRootChange={handleRootChange}
+          onNoteOn={handleNoteOn}
+          onNoteOff={handleNoteOff}
+          onFreqNoteOn={handleFreqNoteOn}
+          onFreqNoteOff={handleFreqNoteOff}
+        />
       </div>
     </div>
   );
