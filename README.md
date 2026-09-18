@@ -2,7 +2,7 @@
 
 Formula-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, and MIDI.
 
-**v1.0.0** · [Live demo](https://ciaccodavide.github.io/mutating-waveform-synth/) · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth)
+**v1.0.0** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
@@ -22,8 +22,8 @@ Formula-shaped wavetable synth: write an expression, morph it with nested LFOs, 
 
 | | |
 | --- | --- |
-| **Web** | [ciaccodavide.github.io/mutating-waveform-synth](https://ciaccodavide.github.io/mutating-waveform-synth/) |
-| **Desktop** | Download the latest build from [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) |
+| **Desktop** | Download the latest build from [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) (macOS Apple Silicon + Intel, Linux, Windows) |
+| **Web** | Build with `npm run build` and serve the `dist/` folder on your own host |
 
 Click **Start** once to unlock the audio context (browser gesture required on the web build).
 
@@ -40,7 +40,7 @@ Desktop (requires [Rust](https://rustup.rs/)):
 npm run tauri:dev
 ```
 
-Production web build:
+Production web build (static files in `dist/`, relative asset paths):
 
 ```bash
 npm run build

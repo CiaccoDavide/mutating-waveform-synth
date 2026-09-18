@@ -61,8 +61,6 @@ jobs:
           releaseName: 'Mutating Waveform Synth v__VERSION__'
           releaseBody: |
             Desktop builds for macOS (Apple Silicon + Intel), Linux, and Windows.
-
-            Web demo: https://ciaccodavide.github.io/mutating-waveform-synth/
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
