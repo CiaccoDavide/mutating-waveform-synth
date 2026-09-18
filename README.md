@@ -2,13 +2,14 @@
 
 Formula-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, and MIDI.
 
-**v1.0.0** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth)
+**v1.0.1** · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
 ## Features
 
 - **Formula wavetables** — expressions in `x` (phase) and `t` (time), with pedagogical presets from static waves to complex nested modulators
+- **Wave edit mode** — draw with control points (exact Steps/Linear formulas, Smooth via Fourier), then Apply
 - **Time mutators** — up to 3 LFOs + sub-LFOs that warp phase, fold, amp, and morph rate, then re-bake the shared table
 - **8 oscillators** — equal-temperament harmony or free frequencies, detune, gain, pan
 - **Filters** — three series biquads with per-parameter LFOs

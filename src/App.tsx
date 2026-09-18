@@ -48,6 +48,14 @@ import { useRootInput } from './input/useRootInput';
 import { PresetPanel } from './ui/PresetPanel';
 import { MonitorStrip } from './ui/MonitorStrip';
 import {
+  CONNECT_MODES,
+  defaultSketchPoints,
+  pointsFromSamples,
+  sketchToExpression,
+  type ConnectMode,
+  type WavePoint,
+} from './audio/WaveSketch';
+import {
   createPresetId,
   deletePreset,
   exportLibraryToFile,
@@ -115,6 +123,15 @@ export default function App() {
   );
   const [presetNameDraft, setPresetNameDraft] = useState('My Patch');
   const [presetStatus, setPresetStatus] = useState<string | null>(null);
+
+  const [waveEditMode, setWaveEditMode] = useState(false);
+  const [wavePoints, setWavePoints] = useState<WavePoint[]>(() =>
+    defaultSketchPoints(),
+  );
+  const [waveConnectMode, setWaveConnectMode] =
+    useState<ConnectMode>('smooth');
+  const [waveApproximate, setWaveApproximate] = useState(false);
+  const waveDraftRef = useRef<WavePoint[] | null>(null);
 
   const handleRootChange = useCallback(
     (root: { note: number; octave: number }) => {
@@ -488,6 +505,36 @@ export default function App() {
     setPresetId('custom');
   }, []);
 
+  const enterWaveEdit = useCallback(() => {
+    waveDraftRef.current = wavePoints;
+    const seeded =
+      samples.length > 0 ? pointsFromSamples(samples, 8) : defaultSketchPoints();
+    setWavePoints(seeded);
+    setWaveEditMode(true);
+  }, [samples, wavePoints]);
+
+  const cancelWaveEdit = useCallback(() => {
+    if (waveDraftRef.current) setWavePoints(waveDraftRef.current);
+    waveDraftRef.current = null;
+    setWaveEditMode(false);
+  }, []);
+
+  const applyWaveEdit = useCallback(() => {
+    const expr = sketchToExpression(wavePoints, waveConnectMode, {
+      approximate: waveApproximate || waveConnectMode === 'smooth',
+    });
+    setExpression(expr);
+    setPresetId('custom');
+    waveDraftRef.current = null;
+    setWaveEditMode(false);
+  }, [wavePoints, waveConnectMode, waveApproximate]);
+
+  const resetWavePoints = useCallback(() => {
+    setWavePoints(
+      samples.length > 0 ? pointsFromSamples(samples, 8) : defaultSketchPoints(),
+    );
+  }, [samples]);
+
   const handleVoiceChange = useCallback(
     (index: number, patch: Partial<VoiceState>) => {
       setVoices((prev) =>
@@ -632,8 +679,93 @@ export default function App() {
           </aside>
 
           <section className="stage-center">
-            <div className="plot-frame">
-              <FormulaPlot samples={samples} />
+            <div className={`plot-frame${waveEditMode ? ' is-editing' : ''}`}>
+              <div className="plot-toolbar">
+                {!waveEditMode ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={enterWaveEdit}
+                  >
+                    Edit wave
+                  </button>
+                ) : (
+                  <>
+                    <span className="panel-hint">Edit mode</span>
+                    <div className="plot-connect-modes">
+                      {CONNECT_MODES.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className={`btn btn-ghost${waveConnectMode === m.id ? ' active' : ''}`}
+                          onClick={() => setWaveConnectMode(m.id)}
+                        >
+                          {m.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="plot-connect-modes" title="Export style">
+                      <button
+                        type="button"
+                        className={`btn btn-ghost${!waveApproximate && waveConnectMode !== 'smooth' ? ' active' : ''}`}
+                        disabled={waveConnectMode === 'smooth'}
+                        onClick={() => setWaveApproximate(false)}
+                        title={
+                          waveConnectMode === 'smooth'
+                            ? 'Smooth always uses Fourier approximation'
+                            : 'Exact piecewise formula (hard edges)'
+                        }
+                      >
+                        Exact
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-ghost${waveApproximate || waveConnectMode === 'smooth' ? ' active' : ''}`}
+                        onClick={() => setWaveApproximate(true)}
+                        title="Fourier series approximation"
+                      >
+                        Approximate
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={resetWavePoints}
+                      title="Reseed points from current wave"
+                    >
+                      Reset points
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={cancelWaveEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={applyWaveEdit}
+                    >
+                      Apply
+                    </button>
+                  </>
+                )}
+              </div>
+              <FormulaPlot
+                samples={samples}
+                editMode={waveEditMode}
+                points={wavePoints}
+                connectMode={waveConnectMode}
+                onPointsChange={setWavePoints}
+              />
+              {waveEditMode && (
+                <p className="plot-edit-hint">
+                  Click to add · drag to move · double-click or Alt-click to
+                  delete · Exact keeps hard edges · Approximate uses Fourier
+                  {waveConnectMode === 'smooth' ? ' · Smooth is always Approximate' : ''}
+                </p>
+              )}
             </div>
             <div className="center-controls">
               <HarmonyControls

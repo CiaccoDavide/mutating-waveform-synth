@@ -41,6 +41,15 @@ const FUNCTIONS: Record<string, (...args: number[]) => number> = {
   min: Math.min,
   max: Math.max,
   sign: Math.sign,
+  /** Heaviside: 1 if x >= edge, else 0 */
+  step: (edge: number, x: number) => (x >= edge ? 1 : 0),
+  clamp: (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x)),
+  lerp: (a: number, b: number, t: number) => a + (b - a) * t,
+  mod: (x: number, m: number) => {
+    if (m === 0) return 0;
+    const r = x % m;
+    return r < 0 ? r + m : r;
+  },
 };
 
 const CONSTANTS: Record<string, number> = {
