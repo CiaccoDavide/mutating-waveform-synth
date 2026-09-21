@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Mobile Play surface — floating Play button with touch piano and just-intonation hexagonal lattice
 - Live demo link in the README
+- App subtitle shows the current version, linked to the GitHub changelog
 
 ### Changed
 

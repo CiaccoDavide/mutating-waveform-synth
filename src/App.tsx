@@ -94,6 +94,10 @@ import {
 import './styles/theme.css';
 import './App.css';
 
+const APP_VERSION = __APP_VERSION__;
+const CHANGELOG_URL =
+  'https://github.com/CiaccoDavide/mutating-waveform-synth/blob/main/CHANGELOG.md';
+
 const DEFAULT_PRESET = FORMULA_PRESETS.find((p) => p.id === 'sine')!;
 
 function loadLibraryWithSeed(): PresetLibrary {
@@ -825,6 +829,14 @@ export default function App() {
           <div className="app-brand">
             <h1>Mutating Waveform Synth</h1>
             <p className="app-meta">
+              <a
+                href={CHANGELOG_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="Changelog"
+              >
+                v{APP_VERSION}
+              </a>
               <a
                 href="https://github.com/CiaccoDavide/mutating-waveform-synth"
                 target="_blank"

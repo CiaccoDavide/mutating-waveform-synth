@@ -812,7 +812,7 @@
     padding: 0 1rem;
     border: 1px solid var(--border-strong);
     border-radius: 999px;
-    background: var(--accent-soft);
+    background: var(--bg-field);
     color: var(--accent);
     font-size: 0.85rem;
     font-weight: 500;
