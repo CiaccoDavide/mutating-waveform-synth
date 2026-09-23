@@ -1,7 +1,7 @@
 {
   "name": "mutating-waveform-synth",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,7 +17,12 @@
     "seq:build": "npm --prefix apps/sequencer run build",
     "seq:preview": "npm --prefix apps/sequencer run preview",
     "seq:tauri:dev": "npm --prefix apps/sequencer run tauri:dev",
-    "seq:tauri:build": "npm --prefix apps/sequencer run tauri:build"
+    "seq:tauri:build": "npm --prefix apps/sequencer run tauri:build",
+    "mod:dev": "npm --prefix apps/modular run dev",
+    "mod:build": "npm --prefix apps/modular run build",
+    "mod:preview": "npm --prefix apps/modular run preview",
+    "mod:tauri:dev": "npm --prefix apps/modular run tauri:dev",
+    "mod:tauri:build": "npm --prefix apps/modular run tauri:build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",

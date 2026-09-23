@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-23
+
+### Added
+
+- **Mutating Modular** companion (`apps/modular/`) — Vite + React Flow + Tauri mono modular patcher
+- Modular **modules**: Osc, Env, Filter, VCA, Mixer, Noise, Out, Chorus, Delay, Reverb, Dist, Clock, Seq, Quant, LFO, S&H, Att, **Turing**, **Euclid**
+- Osc extras: pulse / fold waves, pulse width, detune, 1-op FM; LFO extras: pulse / random / S&H waves, PW, uni/bi polarity
+- Cable rules: same-kind ports, plus **audio → CV** modulation into float knobs
+- **Expanded** mode — inline module params; compact chrome for denser patching; inspector when compact
+- Palette **Modules / Blueprints / Presets** tabs; blueprints merge into the current graph
+- Factory presets (Core, Bright lead, Self-play, Drifting drone, Dual mix, Noise & hold, Seq grit, Turing loop, Euclid pulse, PWM pad, Euclid + Turing, FM grit, Bipolar filter)
+- Live env stage viz; Turing bit LEDs; Euclid pattern strip
+- Root scripts: `mod:dev`, `mod:build`, `mod:tauri:dev`, `mod:tauri:build`
+- Multi-app GitHub release builds for Synth, Sequencer, and Modular (desktop); Android APK for the Synth
+
+### Fixed
+
+- Envelope attack used analyser-lagged level on retrigger (sounded instant); ADSR times now use reliable stored values and linear ramps
+
+### Changed
+
+- Modular README and root docs cover the full module set, blueprints, and transport
+
 ## [1.2.0] - 2026-09-23
 
 ### Added

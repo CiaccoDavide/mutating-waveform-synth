@@ -2,7 +2,7 @@
 
 Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and voice it through harmonized oscillators, filters, FX, and MIDI.
 
-**v1.1.3** · <a href="https://ciaccodavi.de/projects/mutating-waveform-synth" target="_blank" rel="noopener noreferrer">Live demo</a> · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
+**v1.3.0** · <a href="https://ciaccodavi.de/projects/mutating-waveform-synth" target="_blank" rel="noopener noreferrer">Live demo</a> · [Releases](https://github.com/CiaccoDavide/mutating-waveform-synth/releases) · [Repository](https://github.com/CiaccoDavide/mutating-waveform-synth) · [Changelog](CHANGELOG.md)
 
 ![Mutating Waveform Synth UI with the Cascade complex formula](docs/screenshot.png)
 
@@ -20,7 +20,8 @@ Math-shaped wavetable synth: write an expression, morph it with nested LFOs, and
 - **Presets** — save / load / import / export JSON patches (schema v4); read-only **Inspired by** factory patches plus auto-seeded editable copies under **Yours** — approximations, not emulations of trademarked instruments
 - **Monitor strip** — scope, spectrum, spectrogram, LFO traces, voice activity, MIDI/KEY indicators
 - **Desktop & Android** — packaged with [Tauri](https://tauri.app/) for macOS, Windows, Linux, and Android (APK)
-- **Pattern Sequencer companion** — separate web/Tauri app that drives the synth over MIDI (IAC / loopMIDI) with linear, radar, bounce, rain, strings, tree, pulses, ratchet, cycles, phrase, arp, and brownian engines
+- **Pattern Sequencer companion** — separate web/Tauri app that drives the synth over MIDI (IAC / loopMIDI) with many generative engines
+- **Modular companion** — mono node patcher (React Flow) with Voice / Effects / Timing modules, Turing & Euclid sequencers, blueprints, and Expanded inline controls
 
 ### Signal path
 
@@ -144,6 +145,23 @@ npm run seq:tauri:build
 ```
 
 Or from `apps/sequencer/`: `npm install` then `npm run dev` / `tauri:dev` / `build`.
+
+### Mutating Modular
+
+**Mutating Modular** (`apps/modular/`) is a sibling **mono** patch editor (React Flow + Web Audio). Drag modules, cable same-kind ports (or audio→CV for modulation), hold **Gate** / hit **Play**, toggle **Expanded** for on-node params.
+
+Palette tabs: **Modules** (drag), **Blueprints** (merge fragments into the current graph), **Presets** (replace with factory or saved patches).
+
+Highlights: Turing + Euclid sequencers, richer Osc/LFO waves (pulse, fold, FM, bipolar LFO), FX chain, factory presets and mergeable blueprints. Full module list: [`apps/modular/README.md`](apps/modular/README.md).
+
+```bash
+npm install --prefix apps/modular
+npm run mod:dev          # http://localhost:1440
+npm run mod:build
+npm run mod:preview
+npm run mod:tauri:dev
+npm run mod:tauri:build
+```
 
 ## Stack
 

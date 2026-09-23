@@ -1,0 +1,44 @@
+:root {
+  --bg-deep: #070a0d;
+  --bg-panel: rgba(12, 18, 24, 0.9);
+  --border: rgba(94, 234, 212, 0.14);
+  --border-strong: rgba(94, 234, 212, 0.28);
+  --text: #d8e4ec;
+  --text-dim: #7a8f9e;
+  --accent: #5eead4;
+  --amber: #e8b86d;
+  --port-audio: #5eead4;
+  --port-cv: #e8b86d;
+  --port-gate: #f472b6;
+  --font: 'Sono', sans-serif;
+  --radius: 2px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: radial-gradient(ellipse at 20% 0%, #102028 0%, var(--bg-deep) 55%);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}

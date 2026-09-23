@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mutating Waveform — v1.3.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fragment+Mono:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg0: #0a1016;
+        --bg1: #101820;
+        --ink: #e8eef4;
+        --dim: #8a9aab;
+        --line: rgba(148, 180, 200, 0.18);
+        --accent: #5eead4;
+        --amber: #e8b86d;
+        --violet: #a78bfa;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1000px 500px at 10% -10%, rgba(94, 234, 212, 0.14), transparent 55%),
+          radial-gradient(800px 420px at 100% 0%, rgba(232, 184, 109, 0.1), transparent 50%),
+          linear-gradient(165deg, var(--bg0), var(--bg1) 55%, #0c141c);
+      }
+      .wrap {
+        width: min(920px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 3.5rem 0 4rem;
+      }
+      .brand {
+        font-family: "Fragment Mono", ui-monospace, monospace;
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 0.75rem;
+      }
+      h1 {
+        margin: 0;
+        font-weight: 600;
+        font-size: clamp(2rem, 5vw, 3rem);
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .lede {
+        margin: 1rem 0 0;
+        max-width: 38rem;
+        color: var(--dim);
+        font-size: 1.05rem;
+        line-height: 1.55;
+      }
+      .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1.75rem;
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        text-decoration: none;
+        font-size: 0.92rem;
+        background: rgba(255, 255, 255, 0.03);
+        transition: border-color 0.15s, color 0.15s, background 0.15s;
+      }
+      a.btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(94, 234, 212, 0.08);
+      }
+      a.btn.primary {
+        border-color: rgba(94, 234, 212, 0.45);
+        background: rgba(94, 234, 212, 0.14);
+        color: var(--accent);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-top: 2.75rem;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1.15rem 1.2rem 1.25rem;
+        background: rgba(8, 12, 18, 0.55);
+      }
+      .card h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+      .card p {
+        margin: 0.45rem 0 0;
+        color: var(--dim);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+      .tag {
+        display: inline-block;
+        margin-top: 0.85rem;
+        font-family: "Fragment Mono", ui-monospace, monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--amber);
+      }
+      .tag.violet {
+        color: var(--violet);
+      }
+      .tag.teal {
+        color: var(--accent);
+      }
+      .notes {
+        margin-top: 2.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--line);
+      }
+      .notes h3 {
+        margin: 0 0 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .notes ul {
+        margin: 0;
+        padding-left: 1.15rem;
+        color: var(--dim);
+        line-height: 1.55;
+        font-size: 0.92rem;
+      }
+      footer {
+        margin-top: 2.5rem;
+        color: var(--dim);
+        font-size: 0.78rem;
+      }
+      footer a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="brand">Release · v1.3.0</p>
+      <h1>Mutating Waveform family</h1>
+      <p class="lede">
+        Formula synth, generative MIDI sequencer, and a new mono modular patcher —
+        desktop builds for every platform, plus an Android APK for the synth.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/CiaccoDavide/mutating-waveform-synth/releases/tag/v1.3.0"
+          >Download builds</a
+        >
+        <a class="btn" href="https://ciaccodavi.de/projects/mutating-waveform-synth"
+          >Synth live demo</a
+        >
+        <a class="btn" href="https://github.com/CiaccoDavide/mutating-waveform-synth/blob/main/CHANGELOG.md"
+          >Changelog</a
+        >
+      </div>
+
+      <section class="grid" aria-label="Apps in this release">
+        <article class="card">
+          <h2>Waveform Synth</h2>
+          <p>Math wavetables, ladder + FX, MIDI, and formula morphing.</p>
+          <span class="tag teal">Desktop + Android</span>
+        </article>
+        <article class="card">
+          <h2>Pattern Sequencer</h2>
+          <p>Generative engines over Web MIDI (IAC / loopMIDI) into the synth.</p>
+          <span class="tag amber">Desktop</span>
+        </article>
+        <article class="card">
+          <h2>Modular</h2>
+          <p>Node patch bay with Turing, Euclid, Expanded controls, and blueprints.</p>
+          <span class="tag violet">Desktop · new</span>
+        </article>
+      </section>
+
+      <section class="notes">
+        <h3>What’s new</h3>
+        <ul>
+          <li>Mutating Modular companion with Voice / Effects / Timing modules</li>
+          <li>Turing &amp; Euclid sequencers; richer Osc / LFO waves and FM</li>
+          <li>Blueprints merge into your patch; Modules / Blueprints / Presets tabs</li>
+          <li>Envelope attack timing fixed for slow ADSR rises</li>
+        </ul>
+      </section>
+
+      <footer>
+        MIT © CiaccoDavide ·
+        <a href="https://github.com/CiaccoDavide/mutating-waveform-synth">GitHub</a>
+      </footer>
+    </main>
+  </body>
+</html>

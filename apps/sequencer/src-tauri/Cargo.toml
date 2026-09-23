@@ -1,6 +1,6 @@
 [package]
 name = "mutating-pattern-sequencer"
-version = "1.2.0"
+version = "1.3.0"
 description = "MIDI pattern sequencer companion for Mutating Waveform Synth"
 authors = ["CiaccoDavide"]
 license = "MIT"

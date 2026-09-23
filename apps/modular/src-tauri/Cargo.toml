@@ -1,17 +1,14 @@
 [package]
-name = "mutating-waveform-synth"
+name = "mutating-modular"
 version = "1.3.0"
-description = "Math-shaped wavetable synth with mutating LFOs"
+description = "Node-based modular synth companion"
 authors = ["CiaccoDavide"]
 license = "MIT"
-repository = "https://github.com/CiaccoDavide/mutating-waveform-synth"
 edition = "2021"
 rust-version = "1.77.2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-name = "mutating_waveform_synth_lib"
+name = "mutating_modular_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
