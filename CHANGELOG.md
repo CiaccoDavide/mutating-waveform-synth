@@ -5,6 +5,25 @@ All notable changes to Mutating Waveform Synth are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.2.0] - 2026-09-23
+
+### Added
+
+- **MIDI channel / input filter** on the synth (listen channel 1–16 + optional input port); persisted in presets (**schema v4**)
+- **Mutating Pattern Sequencer** companion (`apps/sequencer/`) — Vite + React + Tauri app with Web MIDI out, transport clock, WebGL2 viz, and factory presets
+- Sequencer engines: Linear, Radar, Bounce, Rain, Strings, Tree, Pulses, Ratchet, Cycles, Phrase, Arp, Brownian, Orbit, Cellular, Markov, Polyrhythm, Swarm, Pendulum, Lissajous, Ripple
+- Sequencer transport **humanize** plus viz FX (**trail / bloom / vignette / flash**)
+- Twin slider+number **ParamField** panels with per-engine **normalize** on preset load
+
+### Changed
+
+- Sequencer viz uses shared **WebGL2** scene renderer (soft particles, FBO trail, post grain); physics modes simulate on RAF `dt`
+- Radar concentric Euclid rings; Strings waves + detector; polyphonic Linear steps; deeper Rain / Tree / Pulses / Bounce / Ratchet / Cycles settings
+- Root scripts: `seq:dev`, `seq:build`, `seq:tauri:dev`, `seq:tauri:build`
+- README docs for IAC Driver (macOS) and loopMIDI (Windows) pairing
+
 ## [1.1.3] - 2026-09-18
 
 ### Added

@@ -21,7 +21,7 @@ import {
 import { DEFAULT_ADSR } from '../audio/Envelope';
 import { DEFAULT_ARP } from '../audio/Arpeggiator';
 
-export const PRESET_SCHEMA_VERSION = 3;
+export const PRESET_SCHEMA_VERSION = 4;
 export const PRESET_STORAGE_KEY = 'mws-global-presets-v1';
 /** Bump when factory patch DSP changes and new seeded ids should appear */
 export const CURRENT_FACTORY_SEED_VERSION = 1;
@@ -46,6 +46,10 @@ export interface InstrumentSnapshot {
   effects?: EffectSlot[] | EffectsState;
   ladder?: LadderState;
   fm?: FmState;
+  /** MIDI listen channel 1–16 — schema v4 */
+  midiChannel?: number;
+  /** Preferred MIDI input device id (empty = all) */
+  midiInputId?: string;
 }
 
 export function normalizeSnapshot(snap: InstrumentSnapshot): InstrumentSnapshot {
@@ -62,7 +66,15 @@ export function normalizeSnapshot(snap: InstrumentSnapshot): InstrumentSnapshot 
     effects: effectsToSlots(effectsState),
     ladder: normalizeLadder(snap.ladder),
     fm: normalizeFm(snap.fm),
+    midiChannel: clampMidiChannel(snap.midiChannel),
+    midiInputId:
+      typeof snap.midiInputId === 'string' ? snap.midiInputId : '',
   };
+}
+
+function clampMidiChannel(ch: number | undefined): number {
+  if (typeof ch !== 'number' || !Number.isFinite(ch)) return 1;
+  return Math.min(16, Math.max(1, Math.round(ch)));
 }
 
 export interface SavedPreset {

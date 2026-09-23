@@ -10,6 +10,7 @@ import {
   type ArpState,
 } from '../audio/Arpeggiator';
 import { DEFAULT_ADSR, type AdsrParams } from '../audio/Envelope';
+import type { MidiInputDevice } from '../input/useRootInput';
 import type { MidiStatus, PlayMode } from '../input/RootInput';
 import { CollapsibleSection } from './CollapsibleSection';
 import { RandomizeButton } from './RandomizeButton';
@@ -28,6 +29,9 @@ interface HarmonyControlsProps {
   arp: ArpState;
   midiStatus: MidiStatus;
   playOctave: number;
+  midiChannel: number;
+  midiInputId: string;
+  midiInputs: MidiInputDevice[];
   onRootNoteChange: (note: number) => void;
   onRootOctaveChange: (octave: number) => void;
   onHarmonyChange: (id: HarmonyPresetId) => void;
@@ -38,6 +42,8 @@ interface HarmonyControlsProps {
   onAdsrChange: (next: AdsrParams) => void;
   onArpChange: (next: ArpState) => void;
   onEnableMidi: () => void;
+  onMidiChannelChange: (ch: number) => void;
+  onMidiInputIdChange: (id: string) => void;
 }
 
 export function HarmonyControls({
@@ -52,6 +58,9 @@ export function HarmonyControls({
   arp,
   midiStatus,
   playOctave,
+  midiChannel,
+  midiInputId,
+  midiInputs,
   onRootNoteChange,
   onRootOctaveChange,
   onHarmonyChange,
@@ -62,6 +71,8 @@ export function HarmonyControls({
   onAdsrChange,
   onArpChange,
   onEnableMidi,
+  onMidiChannelChange,
+  onMidiInputIdChange,
 }: HarmonyControlsProps) {
   const isAdsr = playMode === 'adsr';
   const midiLabel =
@@ -118,6 +129,43 @@ export function HarmonyControls({
             Enable MIDI
           </button>
         )}
+      </div>
+
+      <div className="harmony-grid">
+        <div className="field">
+          <label className="label" htmlFor="midi-channel">
+            MIDI ch
+          </label>
+          <select
+            id="midi-channel"
+            value={midiChannel}
+            onChange={(e) => onMidiChannelChange(Number(e.target.value))}
+          >
+            {Array.from({ length: 16 }, (_, i) => i + 1).map((ch) => (
+              <option key={ch} value={ch}>
+                {ch}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label className="label" htmlFor="midi-input">
+            MIDI in
+          </label>
+          <select
+            id="midi-input"
+            value={midiInputId}
+            onChange={(e) => onMidiInputIdChange(e.target.value)}
+            disabled={midiStatus !== 'ready'}
+          >
+            <option value="">All inputs</option>
+            {midiInputs.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="harmony-grid">

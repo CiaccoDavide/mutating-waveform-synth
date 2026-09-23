@@ -9,10 +9,19 @@ import {
   type RootPitch,
 } from './RootInput';
 
+export interface MidiInputDevice {
+  id: string;
+  name: string;
+}
+
 interface UseRootInputOptions {
   enabled?: boolean;
   playMode: PlayMode;
   playOctave: number;
+  /** MIDI channel 1–16 */
+  midiChannel?: number;
+  /** Empty string = all inputs */
+  midiInputId?: string;
   onRootChange: (root: RootPitch) => void;
   onPlayOctaveChange: (octave: number) => void;
   onNoteOn?: (midi: number, velocity: number) => void;
@@ -23,6 +32,8 @@ export function useRootInput({
   enabled = true,
   playMode,
   playOctave,
+  midiChannel = 1,
+  midiInputId = '',
   onRootChange,
   onPlayOctaveChange,
   onNoteOn,
@@ -35,6 +46,7 @@ export function useRootInput({
   );
   const [midiActive, setMidiActive] = useState(false);
   const [keyboardActive, setKeyboardActive] = useState(false);
+  const [midiInputs, setMidiInputs] = useState<MidiInputDevice[]>([]);
   const accessRef = useRef<MIDIAccess | null>(null);
   const onRootRef = useRef(onRootChange);
   const onOctaveRef = useRef(onPlayOctaveChange);
@@ -48,6 +60,10 @@ export function useRootInput({
   playOctaveRef.current = playOctave;
   const playModeRef = useRef(playMode);
   playModeRef.current = playMode;
+  const midiChannelRef = useRef(midiChannel);
+  midiChannelRef.current = midiChannel;
+  const midiInputIdRef = useRef(midiInputId);
+  midiInputIdRef.current = midiInputId;
   const heldKeysRef = useRef(new Set<string>());
   const midiFlashTimer = useRef<number | null>(null);
 
@@ -60,11 +76,27 @@ export function useRootInput({
     }, 160);
   }, []);
 
+  const refreshInputs = useCallback((access: MIDIAccess) => {
+    const list: MidiInputDevice[] = [];
+    for (const input of access.inputs.values()) {
+      list.push({
+        id: input.id,
+        name: input.name || input.id,
+      });
+    }
+    setMidiInputs(list);
+  }, []);
+
   const handleMidiMessage = useCallback(
     (event: MIDIMessageEvent) => {
       const data = event.data;
       if (!data || data.length < 2) return;
-      const status = data[0]! & 0xf0;
+      const statusByte = data[0]!;
+      const status = statusByte & 0xf0;
+      const channel = (statusByte & 0x0f) + 1;
+      const want = Math.min(16, Math.max(1, midiChannelRef.current));
+      if (channel !== want) return;
+
       const note = data[1]!;
       const velocity = data.length > 2 ? data[2]! : 0;
 
@@ -90,11 +122,33 @@ export function useRootInput({
 
   const bindInputs = useCallback(
     (access: MIDIAccess) => {
+      refreshInputs(access);
+      const prefer = midiInputIdRef.current;
       for (const input of access.inputs.values()) {
+        input.onmidimessage = null;
+      }
+      for (const input of access.inputs.values()) {
+        if (prefer && input.id !== prefer) continue;
         input.onmidimessage = handleMidiMessage;
+        if (prefer) break;
+      }
+      // If preferred id missing, listen on all
+      if (prefer) {
+        let found = false;
+        for (const input of access.inputs.values()) {
+          if (input.id === prefer) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          for (const input of access.inputs.values()) {
+            input.onmidimessage = handleMidiMessage;
+          }
+        }
       }
     },
-    [handleMidiMessage],
+    [handleMidiMessage, refreshInputs],
   );
 
   const enableMidi = useCallback(async () => {
@@ -113,6 +167,13 @@ export function useRootInput({
     }
   }, [bindInputs]);
 
+  // Rebind when selected input changes
+  useEffect(() => {
+    const access = accessRef.current;
+    if (!access || midiStatus !== 'ready') return;
+    bindInputs(access);
+  }, [midiInputId, midiStatus, bindInputs]);
+
   useEffect(() => {
     return () => {
       if (midiFlashTimer.current !== null) clearTimeout(midiFlashTimer.current);
@@ -124,7 +185,6 @@ export function useRootInput({
     };
   }, []);
 
-  // Release all held PC keys when leaving ADSR mode
   useEffect(() => {
     if (playMode !== 'adsr') {
       heldKeysRef.current.clear();
@@ -196,5 +256,11 @@ export function useRootInput({
     };
   }, [enabled]);
 
-  return { midiStatus, enableMidi, midiActive, keyboardActive };
+  return {
+    midiStatus,
+    enableMidi,
+    midiActive,
+    keyboardActive,
+    midiInputs,
+  };
 }

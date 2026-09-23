@@ -1,22 +1,22 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Mutating Waveform Synth",
+  "productName": "Mutating Pattern Sequencer",
   "version": "1.2.0",
-  "identifier": "com.ciaccodavide.mutating-waveform-synth",
+  "identifier": "com.ciaccodavide.mutating-pattern-sequencer",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:1430",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
-        "title": "Mutating Waveform Synth",
-        "width": 1440,
-        "height": 900,
-        "minWidth": 1280,
-        "minHeight": 720,
+        "title": "Mutating Pattern Sequencer",
+        "width": 1100,
+        "height": 780,
+        "minWidth": 900,
+        "minHeight": 640,
         "resizable": true,
         "fullscreen": false
       }

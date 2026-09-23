@@ -1,17 +1,14 @@
 [package]
-name = "mutating-waveform-synth"
+name = "mutating-pattern-sequencer"
 version = "1.2.0"
-description = "Math-shaped wavetable synth with mutating LFOs"
+description = "MIDI pattern sequencer companion for Mutating Waveform Synth"
 authors = ["CiaccoDavide"]
 license = "MIT"
-repository = "https://github.com/CiaccoDavide/mutating-waveform-synth"
 edition = "2021"
 rust-version = "1.77.2"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-name = "mutating_waveform_synth_lib"
+name = "mutating_pattern_sequencer_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

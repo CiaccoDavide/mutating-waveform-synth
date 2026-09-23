@@ -129,6 +129,8 @@ export default function App() {
   const [arp, setArp] = useState<ArpState>(DEFAULT_ARP);
   const [playMode, setPlayMode] = useState<PlayMode>('drone');
   const [adsr, setAdsr] = useState<AdsrParams>(DEFAULT_ADSR);
+  const [midiChannel, setMidiChannel] = useState(1);
+  const [midiInputId, setMidiInputId] = useState('');
   const [filters, setFilters] = useState<FilterState[]>(() =>
     createDefaultFilterBank(),
   );
@@ -307,10 +309,13 @@ export default function App() {
     audioEngine.adsrNoteOffId(noteId);
   }, []);
 
-  const { midiStatus, enableMidi, midiActive, keyboardActive } = useRootInput({
+  const { midiStatus, enableMidi, midiActive, keyboardActive, midiInputs } =
+    useRootInput({
     enabled: true,
     playMode,
     playOctave,
+    midiChannel,
+    midiInputId,
     onRootChange: handleRootChange,
     onPlayOctaveChange: setPlayOctave,
     onNoteOn: handleNoteOn,
@@ -383,6 +388,8 @@ export default function App() {
       effects: effectsToSlots(effects),
       ladder,
       fm,
+      midiChannel,
+      midiInputId,
     };
   }, [
     expression,
@@ -403,6 +410,8 @@ export default function App() {
     effects,
     ladder,
     fm,
+    midiChannel,
+    midiInputId,
   ]);
 
   const applySnapshot = useCallback((snap: InstrumentSnapshot) => {
@@ -428,6 +437,8 @@ export default function App() {
     setEffects(nextEffects);
     setLadder(s.ladder ?? createDefaultLadder());
     setFm(s.fm ?? createDefaultFm());
+    setMidiChannel(s.midiChannel ?? 1);
+    setMidiInputId(s.midiInputId ?? '');
     sampleFnRef.current = null;
     const compiled = compileFormula(s.expression);
     if (compiled.ok) {
@@ -1022,6 +1033,9 @@ export default function App() {
                 arp={arp}
                 midiStatus={midiStatus}
                 playOctave={playOctave}
+                midiChannel={midiChannel}
+                midiInputId={midiInputId}
+                midiInputs={midiInputs}
                 onRootNoteChange={setRootNote}
                 onRootOctaveChange={(o) => {
                   setRootOctave(o);
@@ -1035,6 +1049,8 @@ export default function App() {
                 onAdsrChange={setAdsr}
                 onArpChange={setArp}
                 onEnableMidi={enableMidi}
+                onMidiChannelChange={setMidiChannel}
+                onMidiInputIdChange={setMidiInputId}
               />
               <CollapsibleSection
                 mode="mobile"
